@@ -1,14 +1,14 @@
 /**
- * @package   mod_athena
+ * @package   mod_eductx
  * @copyright 2021, Urban Vidovič <urban.vidovic2@um.si>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 define([
-    "mod_athena/web3",
-    "mod_athena/buffer",
-    "mod_athena/ethereumjs_util",
-    "mod_athena/eth_sig_util"
+    "mod_eductx/web3",
+    "mod_eductx/buffer",
+    "mod_eductx/ethereumjs_util",
+    "mod_eductx/eth_sig_util"
 ], function(Web3, Buffer, Util, EthSigUtil) {
     const ethSigUtil = EthSigUtil.init();
     const Web3Instance = Web3.init();

@@ -1,34 +1,34 @@
 <?php
 /**
- * @package   mod_athena
- * @copyright 2021, Urban Vidovič <urban.vidovic1@student.um.si>
+ * @package   mod_eductx
+ * @copyright 2021, Urban Vidovič <urban.vidovic2@um.si>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 require('../../config.php');
 require_once('lib.php');
-require_once($CFG->dirroot . "/mod/athena/classes/get_id_class.php");
-require_once($CFG->dirroot . "/mod/athena/classes/save_template_class.php");
-require_once($CFG->dirroot . "/mod/athena/classes/delete_template_class.php");
+require_once($CFG->dirroot . "/mod/eductx/classes/get_id_class.php");
+require_once($CFG->dirroot . "/mod/eductx/classes/save_template_class.php");
+require_once($CFG->dirroot . "/mod/eductx/classes/delete_template_class.php");
 
 $id = optional_param('id', 0, PARAM_INT); // Course Module ID, or ...
-$a = optional_param('a',  0, PARAM_INT);  // Athena ID.
+$a = optional_param('a',  0, PARAM_INT);  // eductx ID.
 
 if ($id) {
-    if (!$cm = get_coursemodule_from_id('athena', $id)) {
+    if (!$cm = get_coursemodule_from_id('eductx', $id)) {
         print_error('invalidcoursemodule');
     }
     if (!$course = $DB->get_record('course', array('id' => $cm->course))) {
         print_error('coursemisconf');
     }
 } else {
-    if (!$athena = $DB->get_record('athena', array('id' => $a))) {
-        print_error('invalidathenaid', 'athena');
+    if (!$eductx = $DB->get_record('eductx', array('id' => $a))) {
+        print_error('invalideductxid', 'eductx');
     }
-    if (!$course = $DB->get_record('course', array('id' => $athena->course))) {
+    if (!$course = $DB->get_record('course', array('id' => $eductx->course))) {
         print_error('invalidcourseid');
     }
-    if (!$cm = get_coursemodule_from_instance("athena", $athena->id, $course->id)) {
+    if (!$cm = get_coursemodule_from_instance("eductx", $eductx->id, $course->id)) {
         print_error('invalidcoursemodule');
     }
 }
@@ -37,12 +37,12 @@ if ($id) {
 require_login($course, false, $cm);
 $context = context_module::instance($cm->id);
 
-$PAGE->requires->js_call_amd('mod_athena/main', 'init');
-$PAGE->requires->js_call_amd('mod_athena/buffer', 'init');
-$PAGE->requires->js_call_amd('mod_athena/jsonpack', 'init');
-$PAGE->requires->js_call_amd('mod_athena/eth_ecies', 'init');
-$PAGE->requires->js_call_amd('mod_athena/web3', 'init');
-$PAGE->requires->js_call_amd('mod_athena/eth_sig_util', 'init');
+$PAGE->requires->js_call_amd('mod_eductx/main', 'init');
+$PAGE->requires->js_call_amd('mod_eductx/buffer', 'init');
+$PAGE->requires->js_call_amd('mod_eductx/jsonpack', 'init');
+$PAGE->requires->js_call_amd('mod_eductx/eth_ecies', 'init');
+$PAGE->requires->js_call_amd('mod_eductx/web3', 'init');
+$PAGE->requires->js_call_amd('mod_eductx/eth_sig_util', 'init');
 
 $getidform = new get_id_class();
 $savetemplateform = new save_template_class();
@@ -52,7 +52,7 @@ $getidform->set_data($formdata);
 $savetemplateform->set_data($formdata);
 $deletetemplateform->set_data($formdata);
 
-$PAGE->set_url(new moodle_url('/mod/athena/issue_certificateClass.php'));
+$PAGE->set_url(new moodle_url('/mod/eductx/issue_certificateClass.php'));
 $PAGE->set_context(context_system::instance());
 $PAGE->set_title('EduCTX - Issue Certificate');
 $PAGE->set_heading($course->fullname);
@@ -74,8 +74,8 @@ $displayform = false;
 $eductxidobj = $DB->get_record("eductxid", ["userid" => $USER->id]);
 $eductxid = $eductxidobj->eductxid;
 $recordid = $eductxidobj->id;
-$PAGE->requires->js_call_amd("mod_athena/ui_driver", "sendIdToJs", [$eductxid]);
-$PAGE->requires->js_call_amd("mod_athena/ui_driver", "sendUnitIdToJs", [$course->id]);
+$PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendIdToJs", [$eductxid]);
+$PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendUnitIdToJs", [$course->id]);
 
 if ($fromform = $getidform->get_data()) {
     $eductxidfromform = $fromform->eductxid;
@@ -88,8 +88,8 @@ if ($fromform = $getidform->get_data()) {
         $eductxidobj->id = $recordid;
         $DB->update_record("eductxid", (object)$eductxidobj);
     }
-    $PAGE->requires->js_call_amd("mod_athena/ui_driver", "sendIdToJs", [$eductxidfromform]);
-    $PAGE->requires->js_call_amd("mod_athena/ui_driver", "updateErrorReporting",
+    $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendIdToJs", [$eductxidfromform]);
+    $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "updateErrorReporting",
         ["Linking successful", "Address <b>" . $fromform->address . "</b> has been linked to your account", "alert alert-success"]);
 }
 
@@ -105,13 +105,13 @@ if ($fromform = $savetemplateform->get_data()) {
     $templateobj->measuringunit = $fromform->measuringUnit;
     $templateobj->descurl = $fromform->descUrl;
     $DB->insert_record("templates", $templateobj);
-    $PAGE->requires->js_call_amd("mod_athena/ui_driver", "updateErrorReporting",
+    $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "updateErrorReporting",
         ["Template Saved", "Template <b>" . $fromform->name . "</b> has been saved.", "alert alert-success"]);
 }
 
 if ($fromform = $deletetemplateform->get_data()) {
     $DB->delete_records("templates", ["id" => $fromform->deleteId]);
-    $PAGE->requires->js_call_amd("mod_athena/ui_driver", "updateErrorReporting",
+    $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "updateErrorReporting",
         ["Template Deleted", "Template <b>" . $fromform->deleteName . "</b> has been deleted.", "alert alert-success"]);
 }
 
@@ -143,12 +143,12 @@ $templatecontext = (object)[
     "certTemplates" => array_values($certtemplates),
     "role" => $role
 ];
-echo $OUTPUT->render_from_template("athena/home", $templatecontext);
+echo $OUTPUT->render_from_template("eductx/home", $templatecontext);
 
 $getidform->display();
 $savetemplateform->display();
 $deletetemplateform->display();
 
-$PAGE->requires->js_call_amd('mod_athena/ui_driver', 'initializeEventListeners');
+$PAGE->requires->js_call_amd('mod_eductx/ui_driver', 'initializeEventListeners');
 
 echo $OUTPUT->footer();

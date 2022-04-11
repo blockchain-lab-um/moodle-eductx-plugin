@@ -1,5 +1,5 @@
 /**
- * @package   mod_athena
+ * @package   mod_eductx
  * @copyright 2021, Urban Vidovič <urban.vidovic2@um.si>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -7,7 +7,7 @@
 /* eslint-disable no-console */
 /* eslint-disable no-alert */
 
-define(["mod_athena/web3_driver"], function(w3d) {
+define(["mod_eductx/web3_driver"], function(w3d) {
     const contracts = {
         "eduCTXca": {
             "contractName": "EduCTXca",

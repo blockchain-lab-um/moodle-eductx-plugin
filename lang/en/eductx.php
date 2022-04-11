@@ -16,13 +16,13 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package   mod_athena
+ * @package   mod_eductx
  * @copyright 2021, Urban Vidovič <urban.vidovic1@student.um.si>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die;
-$string["pluginname"]         = "Athena";
-$string["modulename"]         = "Athena";
-$string["modulenameplural"]   = "Athena";
+$string["pluginname"]         = "EduCTX";
+$string["modulename"]         = "EduCTX";
+$string["modulenameplural"]   = "EduCTX";
 $string["balance"]            = "Account balance";

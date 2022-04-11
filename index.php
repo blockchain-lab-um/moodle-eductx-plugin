@@ -1,6 +1,6 @@
 <?php
 /**
- * @package   mod_athena
+ * @package   mod_eductx
  * @copyright 2021, Urban Vidovič <urban.vidovic1@student.um.si>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

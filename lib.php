@@ -1,28 +1,28 @@
 <?php
 /**
- * @package   mod_athena
+ * @package   mod_eductx
  * @copyright 2021, Urban Vidovič <urban.vidovic1@student.um.si>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-function athena_add_instance($athena) {
+function eductx_add_instance($eductx) {
     global $DB;
-    $cmid = $athena->coursemodule;
+    $cmid = $eductx->coursemodule;
 
     // Process the options from the form.
-    $athena->course = "Course";
+    $eductx->course = "Course";
 
     // Try to store it in the database.
-    $athena->id = $DB->insert_record('athena', $athena);
+    $eductx->id = $DB->insert_record('eductx', $eductx);
 
-    return $athena->id;
+    return $eductx->id;
 }
 
-function athena_update_instance($athena) {
+function eductx_update_instance($eductx) {
 
 }
 
-function athena_delete_instance($id) {
+function eductx_delete_instance($id) {
 
 }
 

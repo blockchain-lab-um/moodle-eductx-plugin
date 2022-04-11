@@ -15,15 +15,15 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * @package   mod_athena
- * @copyright 2021, Urban Vidovič <urban.vidovic1@student.um.si>
+ * @package   mod_eductx
+ * @copyright 2021, Urban Vidovič <urban.vidovic2@um.si>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'mod_athena';
-$plugin->version = 20210817;
+$plugin->component = 'mod_eductx';
+$plugin->version = 20220411;
 //$plugin->requires = 20210817;
 //$plugin->supported = TODO;   // Available as of Moodle 3.9.0 or later.
 //$plugin->incompatible = TODO;   // Available as of Moodle 3.9.0 or later.

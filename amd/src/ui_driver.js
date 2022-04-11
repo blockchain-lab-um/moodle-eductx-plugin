@@ -1,15 +1,15 @@
 /**
- * @package   mod_athena
+ * @package   mod_eductx
  * @copyright 2021, Urban Vidovič <urban.vidovic2@um.si>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 define([
-    "mod_athena/buffer",
-    "mod_athena/jsonpack",
-    "mod_athena/eth_ecies",
-    "mod_athena/web3_driver",
-    "mod_athena/contract_driver",
+    "mod_eductx/buffer",
+    "mod_eductx/jsonpack",
+    "mod_eductx/eth_ecies",
+    "mod_eductx/web3_driver",
+    "mod_eductx/contract_driver",
 ], function (Buffer,
              Jpack,
              Ecies,
@@ -489,7 +489,7 @@ define([
             document.getElementById("addressElement").innerHTML = addrString;
         }
         // Example of getting url of an image with moodle js lib
-        const imgSrc =  M.util.image_url("tick", "mod_athena");
+        const imgSrc =  M.util.image_url("tick", "mod_eductx");
         document.getElementById("networkElement").innerHTML = `<img src="${imgSrc}" alt="conn_success"> Connected to Network`;
         switch (option) {
             case UI.STUDENT:
