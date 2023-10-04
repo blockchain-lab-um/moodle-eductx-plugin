@@ -43,6 +43,8 @@ $PAGE->requires->js_call_amd('mod_eductx/jsonpack', 'init');
 $PAGE->requires->js_call_amd('mod_eductx/eth_ecies', 'init');
 $PAGE->requires->js_call_amd('mod_eductx/web3', 'init');
 $PAGE->requires->js_call_amd('mod_eductx/eth_sig_util', 'init');
+$PAGE->requires->js_call_amd('mod_eductx/pdfmake', 'init');
+$PAGE->requires->js_call_amd('mod_eductx/qrcode', 'init');
 
 $getidform = new get_id_class();
 $savetemplateform = new save_template_class();
