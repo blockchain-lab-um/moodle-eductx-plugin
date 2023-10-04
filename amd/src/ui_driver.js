@@ -397,7 +397,7 @@ define(["mod_eductx/main",
         '_' +
         certificate.person.lastName +
         '_' +
-        certificate.certificate.unitTitle
+        certificate.certificate.unitTitle + ".pdf"
       );
 
     // eslint-disable-next-line no-console

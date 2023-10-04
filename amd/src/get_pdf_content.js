@@ -50,7 +50,7 @@ define(["mod_eductx/assets",
                 {
                   text: title,
                   margin: [0, 75, 30, 0],
-                  fontSize: 40,
+                  fontSize: getFontSize(title.length),
                   color: "#333C75"
                 },
                 {
@@ -134,14 +134,14 @@ define(["mod_eductx/assets",
                     {
                       align: "right",
                       image: assets.eduCtxLogo,
-                      width: 58,
-                      height: 58,
+                      width: 48,
+                      height: 48,
                     },
                     {
                       align: "left",
                       image: assets.bclabLogo,
-                      height: 58,
-                      width: 161,
+                      height: 48,
+                      width: 133,
                       margin: [-42, 0, 0, 0]
                     },
                   ],
@@ -233,8 +233,8 @@ define(["mod_eductx/assets",
     }
   };
 
-  function getFontSize(lengthOfName) {
-    let fontsizeFullName = 0;
+  const getFontSize = (lengthOfName) => {
+    let fontsizeFullName = 12;
     if (lengthOfName <= 17) {
       fontsizeFullName = 38;
     } else if (lengthOfName > 17 && lengthOfName <= 20) {
@@ -255,8 +255,7 @@ define(["mod_eductx/assets",
       fontsizeFullName = 14;
     }
     return fontsizeFullName;
-  }
-
+  };
 
   const getContent = async(certificate) => {
     const personFullName =
