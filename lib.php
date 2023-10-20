@@ -25,14 +25,3 @@ function eductx_update_instance($eductx) {
 function eductx_delete_instance($id) {
 
 }
-
-function generate_eductx_id($digits) {
-    $id = '';
-        for ($i = 0; $i < $digits; $i++) {
-            $min = ($i == 0) ? 1 : 0;
-            $max = 9;
-            $digit = rand($min, $max);
-            $id .= $digit;
-        }
-        return $id;
-}

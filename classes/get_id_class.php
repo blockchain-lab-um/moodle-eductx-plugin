@@ -34,10 +34,10 @@ class get_id_class extends moodleform {
             "hidden" => "true"
         ];
         $mform->updateAttributes($attribs);
-        $mform->addElement("text", "eductxid", "EduCTX ID");
+        $mform->addElement("text", "did", "EduCTX ID");
         $mform->setType("messagetext", PARAM_NOTAGS);
         $mform->addElement("text", "address", "Address");
         $mform->setType("messagetext", PARAM_NOTAGS);
-        $this->add_action_buttons(false, "Connect Wallet");
+        $this->add_action_buttons(false, "Connect Masca");
     }
 }
