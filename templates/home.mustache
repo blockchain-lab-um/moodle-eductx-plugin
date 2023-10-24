@@ -77,27 +77,27 @@
                 <button disabled class="btn btn-danger" id="deleteTemplate">Delete template</button>
                 <hr>
             </div>
-            <h2>Certificate</h2>
+            <h2>Verifiable Credential</h2>
             <hr>
             <form id="issueCert">
                 <label for="certTitle">Title</label>
                 <input type="text" class="form-control" id="certTitle" name="title"
-                       placeholder="e.g. Cyber Security Workshop Certificate"><br>
+                       placeholder="e.g. Cyber Security Workshop VC"><br>
                 <label for="unitId">Unit ID</label>
                 <input type="text" disabled class="form-control" id="unitId" name="unitId" value="{{courseId}}"
                        placeholder="Unit ID"><br>
                 <input type="checkbox" id="unitIdDisclaimer">
                 <small class="text-muted">I understand that manually changing Unit ID can lead to students not
-                    seeing their certificates inside of Moodle EduCTX activity</small><br><br>
+                    seeing their credentials inside of Moodle EduCTX activity</small><br><br>
                 <label for="achievement">Achievement</label>
                 <input type="text" class="form-control" id="achievement" name="achievement"
                        placeholder="e.g. Certified Cyber Security Expert"><br>
                 <label for="certShortDesc">Short Description</label>
                 <textarea maxlength="100" id="certShortDesc" class="form-control" name="certShortDesc" form="issueCert"
                           placeholder="Successfully completed Cyber Security Workshop 2021, held in Maribor at FERI UM."></textarea><br>
-                <label for="certType">Certificate Type</label>
+                <label for="certType">Credential Type</label>
                 <input type="text" class="form-control" id="certType" name="certType"
-                       placeholder="e.g. Certificate"><br>
+                       placeholder="e.g. VerifiableCredential"><br>
                 <label for="value">Value</label>
                 <input type="text" class="form-control" style="width: 25%;" id="value" name="certValue"
                        placeholder="e.g. 10"><br>
@@ -112,10 +112,9 @@
             <h2 id="receiverHeading">Student</h2>
             <div id="issueCertReceiver">
                 <label for="students">Name and Surname</label>
-                <select class="form-control" style="width: 35%;" name="students" id="students">
-                    <option disabled selected value> Select a student</option>
+                <select class="form-control" style="width: 35%;" name="students[]" id="students" multiple>
                     {{#students}}
-                        <option value='{ "id": "{{eductxid}}", "mid": "{{id}}", "idNumber": "{{idnumber}}",
+                        <option value='{ "did": "{{did}}", "mid": "{{id}}", "idNumber": "{{idnumber}}",
                         "firstName": "{{firstname}} {{middlename}}", "lastName": "{{lastname}}" }'>
                             {{firstname}} {{middlename}} {{lastname}}</option>
                     {{/students}}
@@ -124,7 +123,7 @@
                 <input type="text" style="width: 25%;" class="form-control" id="studentId" name="studentId"
                        placeholder="e.g. 1234567890">
                 <hr>
-                <button class="btn btn-primary" id="issueCertificate">Issue certificate</button>
+                <button class="btn btn-primary" id="issueCertificate" disabled>Issue VC</button>
                 <hr>
                 <h2>Save Template</h2>
                 <label for="templateName">Template name</label>

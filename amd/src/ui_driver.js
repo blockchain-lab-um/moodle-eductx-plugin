@@ -49,10 +49,12 @@ define(["mod_eductx/main",
   const initializeEventListeners = async() => {
     // Connect Masca button
     document.getElementById("connectButton").addEventListener('click', async() => {
+      document.getElementById("connectButton").disabled = true;
       await w3d.connectClientProvider(async(success) => {
         if (!success) {
           updateErrorReporting("Wallet not installed", "Please consider installing" +
             "<a href='https://metamask.io/'>Metamask</a>.", ERROR.DANGER);
+          document.getElementById("connectButton").disabled = false;
           return;
         }
         initializeProviderEventListeners();
@@ -62,7 +64,11 @@ define(["mod_eductx/main",
     });
     // Issue certificate button
     document.getElementById("issueCertificate").addEventListener('click', () => {
-      issueCert();
+      issueCredentials();
+    });
+
+    document.getElementById('students').addEventListener('change', function() {
+      document.getElementById("issueCertificate").disabled = document.getElementById("students").selectedOptions.length <= 0;
     });
 
     document.getElementById("refreshCredentials").addEventListener("click", () => {
@@ -169,15 +175,39 @@ define(["mod_eductx/main",
    * Prompts Metamask to confirm transaction and issue certificate to selected user
    * @return {Promise<void>}
    */
-  const issueCert = async() => {
+  const issueCredentials = async() => {
+    const url = 'http://localhost:3000/issue-deferred/batch'; // Replace with your actual URL
+    let credentialSubjects = await buildCredentialSubjects();
+    const headers = {
+      'Content-Type': 'application/json',
+      'schemaType': '#didSchemaBatch',
+    };
+
+    try {
+      // eslint-disable-next-line no-console
+      console.log(credentialSubjects);
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(credentialSubjects),
+      });
+
+      if (!response.ok) {
+        updateErrorReporting("Error issuing credentials", "There has been an error issuing credentials", ERROR.DANGER);
+        return;
+      }
+      updateErrorReporting("Credentials issued successfully", "Your credentials have been issued successfully.", ERROR.SUCCESS);
+    } catch (error) {
+      updateErrorReporting("Error issuing credentials", "There has been an error issuing credentials", ERROR.DANGER);
+    }
     // Get data and prepare object for issue
-    did = await w3d.getAddressInUse();
-    let dropDown = document.getElementById('students');
-    const receiverDid = JSON.parse(dropDown.options[dropDown.selectedIndex].value).id;
-    // eslint-disable-next-line no-console
-    console.log(receiverDid);
-    let cert = await buildJSONCertificateFromFields();
-    cert.person.ethAddress = receiverDid;
+    // did = await w3d.getAddressInUse();
+    // let dropDown = document.getElementById('students');
+    // const receiverDid = JSON.parse(dropDown.options[dropDown.selectedIndex].value).id;
+    // // eslint-disable-next-line no-console
+    // console.log(receiverDid);
+    // let cert = await buildJSONCertificateFromFields();
+    // cert.person.ethAddress = receiverDid;
     // TODO: issue VC below
   };
 
@@ -500,29 +530,35 @@ define(["mod_eductx/main",
    * Return JSON object, data from input fields
    * @return {Promise<{obj}>}
    */
-  const buildJSONCertificateFromFields = async() => {
+  const buildCredentialSubjects = async() => {
     let dropDown = document.getElementById('students');
-    const receiverDidData = JSON.parse(dropDown.options[dropDown.selectedIndex].value);
-    did = await w3d.getAddressInUse();
-    // TODO: build correct VC or credentialSubject
-    return {
-      eductxVersion: "2.0", timestamp: Date.now().toString(), person: {
-        id: document.getElementById("studentId").value,
-        firstName: receiverDidData.firstName,
-        lastName: receiverDidData.lastName,
-        ethAddress: "",
-        eduCTXid: receiverDidData.id,
-      }, certificate: {
-        type: document.getElementById("certType").value,
-        certificateTitle: document.getElementById("achievement").value,
-        unitId: document.getElementById("unitId").value,
-        unitTitle: document.getElementById("certTitle").value,
-        shortDescription: document.getElementById("certShortDesc").value,
-        fullDescriptionURI: document.getElementById("descriptionUrl").value,
-        value: document.getElementById("value").value,
-        unitMeasurement: document.getElementById("measureUnit").value,
+    const selectedValues = [];
+    for (let i = 0; i < dropDown.options.length; i++) {
+      if (dropDown.options[i].selected) {
+        const value = JSON.parse(dropDown.options[i].value);
+        selectedValues.push({credentialSubject: {id: value.did, test: "test"}});
       }
-    };
+    }
+    return selectedValues;
+    // TODO: build correct VC or credentialSubject
+    // return {
+    //   eductxVersion: "2.0", timestamp: Date.now().toString(), person: {
+    //     id: document.getElementById("studentId").value,
+    //     firstName: receiverDidData.firstName,
+    //     lastName: receiverDidData.lastName,
+    //     ethAddress: "",
+    //     eduCTXid: receiverDidData.id,
+    //   }, certificate: {
+    //     type: document.getElementById("certType").value,
+    //     certificateTitle: document.getElementById("achievement").value,
+    //     unitId: document.getElementById("unitId").value,
+    //     unitTitle: document.getElementById("certTitle").value,
+    //     shortDescription: document.getElementById("certShortDesc").value,
+    //     fullDescriptionURI: document.getElementById("descriptionUrl").value,
+    //     value: document.getElementById("value").value,
+    //     unitMeasurement: document.getElementById("measureUnit").value,
+    //   }
+    // };
   };
 
   /**

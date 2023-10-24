@@ -141,7 +141,7 @@ $templatecontext = (object)[
     "students" => array_values($eligiblestudents),
     "courseId" => $course->id,
     "eduCtxId" => $did,
-    "titleByRole" => $isauthorized ? "Connect wallet to issue certificates" : "Connect wallet to view your certificates",
+    "titleByRole" => $isauthorized ? "Connect wallet to issue Verifiable Credentials" : "Connect wallet to view claimable Verifiable Credentials",
     "certTemplates" => array_values($certtemplates),
     "role" => $role
 ];
