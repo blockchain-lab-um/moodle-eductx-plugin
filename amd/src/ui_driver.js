@@ -22,6 +22,7 @@ define(["mod_eductx/main",
   // eslint-disable-next-line no-unused-vars
   let currentUnitId;
   let isAuthorized;
+  let endpoint = "http://localhost:3000";
 
   // Module inits
   // const buffer = Buffer.init();
@@ -33,7 +34,6 @@ define(["mod_eductx/main",
 
   // Global vars
   let did;
-  let moodleAddress;
 
   // Const data
   const UI = {
@@ -126,7 +126,7 @@ define(["mod_eductx/main",
     const address = await w3d.getAddressInUse();
     const enableResult = await connector.enableMasca(address, {
       snapId: "npm:@blockchain-lab-um/masca",
-      version: "v1.1.0-beta.2",
+      version: "v1.1.0",
       supportedMethods: ["did:key"]
     });
     if (connector.isError(enableResult)) {
@@ -176,7 +176,7 @@ define(["mod_eductx/main",
    * @return {Promise<void>}
    */
   const issueCredentials = async() => {
-    const url = 'http://localhost:3000/issue-deferred/batch'; // Replace with your actual URL
+    const url = `${endpoint}/issue-deferred/batch`; // Replace with your actual URL
     let credentialSubjects = await buildCredentialSubjects();
     const headers = {
       'Content-Type': 'application/json',
@@ -228,7 +228,6 @@ define(["mod_eductx/main",
       return;
     }
     did = await w3d.getAddressInUse();
-    moodleAddress = "";
     if (!did) {
       did = "did:key:waiting";
     }
@@ -253,7 +252,7 @@ define(["mod_eductx/main",
       updateUI(UI.NOT_IN_SYNC);
       updateErrorReporting("Connected DID not linked to your Moodle account",
         `Currently connected account is not linked to your Moodle account.
-                        Please change your account in MetaMask to <b>${moodleAddress}</b>
+                        Please change your account in MetaMask to <b>${moodleDid}</b>
                         or link the connected account.`, ERROR.WARNING);
       return;
     }
@@ -293,13 +292,50 @@ define(["mod_eductx/main",
     updateErrorReporting("", "", ERROR.SUCCESS);
   };
 
+  const proofOfPossession = async() => {
+    const url = `${endpoint}/query`;
+    const response = await fetch(`${url}/nonce`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({did: did})
+    });
+    const signedData = await masca.signData({
+      type: "JWT",
+      data: {
+        header: {
+          typ: "JWT"
+        },
+        payload: await response.json(),
+      }
+    });
+
+    if (connector.isError(signedData)) {
+      updateErrorReporting("Failed to sign the data",
+        "There has been an error signing the proof of possession data.", ERROR.DANGER);
+    }
+    const claimResponse = await fetch(`${url}/claim`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({proof: signedData.data})
+    });
+    const res = await claimResponse.json();
+    // eslint-disable-next-line no-console
+    console.log(res);
+  };
+
   /**
    * Fetches and shows current user's certificates
    */
   const showCredentials = async() => {
-    // Fetch certs
+    await proofOfPossession();
+// Fetch certs
+    const vcs = [];
     did = await w3d.getAddressInUse();
-    const vcs = await masca.queryCredentials();
+    // const vcs = await masca.queryCredentials();
     if (connector.isError(vcs)) {
       updateErrorReporting("Error fetching credentials", "The credentials could not be loaded at the moment.", ERROR.DANGER);
       return;
