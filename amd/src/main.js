@@ -16,6 +16,7 @@ define([], function() {
         "eth-sig-util": M.cfg.wwwroot + "/mod/eductx/js/eth_sig_util.min",
         "pdfmake": M.cfg.wwwroot + "/mod/eductx/js/pdfmake.min",
         "qrcode": M.cfg.wwwroot + "/mod/eductx/js/qrcode.min",
+        "connector": M.cfg.wwwroot + "/mod/eductx/js/connector.min"
       },
       shim: {
         'ethecies': {exports: 'ecies'},
@@ -26,6 +27,7 @@ define([], function() {
         'eth-sig-util': {exports: 'EthSigUtil'},
         'pdfmake': {exports: 'pdfmake'},
         'qrcode': {exports: 'QRCode'},
+        'connector': {exports: 'connector'}
       }
     });
   };

@@ -45,6 +45,7 @@ $PAGE->requires->js_call_amd('mod_eductx/web3', 'init');
 $PAGE->requires->js_call_amd('mod_eductx/eth_sig_util', 'init');
 $PAGE->requires->js_call_amd('mod_eductx/pdfmake', 'init');
 $PAGE->requires->js_call_amd('mod_eductx/qrcode', 'init');
+$PAGE->requires->js_call_amd('mod_eductx/connector', 'init');
 
 $getidform = new get_id_class();
 $savetemplateform = new save_template_class();
@@ -71,26 +72,25 @@ foreach($roleassignments as $role) {
     }
 }
 
-$displayform = false;
-
-$eductxidobj = $DB->get_record("eductxid", ["userid" => $USER->id]);
-$eductxid = $eductxidobj->eductxid;
-$recordid = $eductxidobj->id;
-$PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendIdToJs", [$eductxid]);
+$didobj = $DB->get_record("did", ["userid" => $USER->id]);
+$did = $didobj->did;
+$recordid = $didobj->id;
+$PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendIdToJs", [$did]);
 $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendUnitIdToJs", [$course->id]);
+$PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendAuthorizedToJs", [$isauthorized]);
 
 if ($fromform = $getidform->get_data()) {
-    $eductxidfromform = $fromform->eductxid;
-    $eductxidobj = new stdClass();
-    $eductxidobj->userid = $USER->id;
-    $eductxidobj->eductxid = $eductxidfromform;
-    if ($eductxid == NULL) {
-        $DB->insert_record("eductxid", $eductxidobj);
+    $didfromform = $fromform->did;
+    $didobj = new stdClass();
+    $didobj->userid = $USER->id;
+    $didobj->did = $didfromform;
+    if ($did == NULL) {
+        $DB->insert_record("did", $didobj);
     } else {
-        $eductxidobj->id = $recordid;
-        $DB->update_record("eductxid", (object)$eductxidobj);
+        $didobj->id = $recordid;
+        $DB->update_record("did", (object)$didobj);
     }
-    $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendIdToJs", [$eductxidfromform]);
+    $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendIdToJs", [$didfromform]);
     $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "updateErrorReporting",
         ["Linking successful", "Address <b>" . $fromform->address . "</b> has been linked to your account", "alert alert-success"]);
 }
@@ -99,13 +99,12 @@ if ($fromform = $savetemplateform->get_data()) {
     $templateobj = new stdClass();
     $templateobj->teacherid = $USER->id;
     $templateobj->name = $fromform->name;
-    $templateobj->certtitle = $fromform->certTitle;
+    $templateobj->title = $fromform->title;
     $templateobj->achievement = $fromform->achievement;
-    $templateobj->shortdesc = $fromform->shortDesc;
-    $templateobj->type = $fromform->type;
-    $templateobj->value = $fromform->value;
-    $templateobj->measuringunit = $fromform->measuringUnit;
-    $templateobj->descurl = $fromform->descUrl;
+    $templateobj->wasawardedby = $fromform->wasAwardedBy;
+    $templateobj->grade = $fromform->grade;
+    $templateobj->ects = $fromform->ects;
+    $templateobj->awardingbodydescription = $fromform->awardingBodyDescription;
     $DB->insert_record("templates", $templateobj);
     $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "updateErrorReporting",
         ["Template Saved", "Template <b>" . $fromform->name . "</b> has been saved.", "alert alert-success"]);
@@ -125,10 +124,10 @@ if ($isauthorized) {
     $eligiblestudents = array();
     $certtemplates = $DB->get_records("templates", ["teacherid" => $USER->id]);
     foreach($students as $student) {
-        $eductxidobj = $DB->get_record("eductxid", ["userid" => $student->id]);
-        $eductxid = $eductxidobj->eductxid;
-        if ($eductxid != NULL) {
-            $student->eductxid = $eductxid;
+        $didobj = $DB->get_record("did", ["userid" => $student->id]);
+        $did = $didobj->did;
+        if ($did != NULL) {
+            $student->did = $did;
             $eligiblestudents[] = $student;
         }
     }
@@ -140,8 +139,8 @@ $templatecontext = (object)[
     "networkPlaceholder" => "0",
     "students" => array_values($eligiblestudents),
     "courseId" => $course->id,
-    "eduCtxId" => $eductxid,
-    "titleByRole" => $isauthorized ? "Connect wallet to issue certificates" : "Connect wallet to view your certificates",
+    "eduCtxId" => $did,
+    "titleByRole" => $isauthorized ? "Connect wallet to issue Verifiable Credentials" : "Connect wallet to view claimable Verifiable Credentials",
     "certTemplates" => array_values($certtemplates),
     "role" => $role
 ];

@@ -53,7 +53,7 @@
             <div>
                 <h1 id="connectTitle">{{titleByRole}}</h1>
             </div>
-            <button class="btn btn-primary" id="connectButton">Connect Wallet</button>
+            <button class="btn btn-primary" id="connectButton">Connect Masca</button>
             <p><small class="text-muted">Don't have a wallet yet? <br><a href="https://metamask.io/"
                                                                          target="_blank">Install
                 one</a></small>
@@ -65,11 +65,11 @@
             <div id="templatesDiv">
                 <label for="templates">Name</label>
                 <select class="form-control" style="width: 30%;" name="templates" id="templates">
-                    <option disabled selected value> Select a template</option>
+                    <option disabled selected value>Select a template</option>
                     {{#certTemplates}}
-                        <option value='{ "id": "{{id}}", "name": "{{name}}", "title": "{{certtitle}}", "achievement": "{{achievement}}",
-                        "shortDesc": "{{shortdesc}}", "type": "{{type}}",
-                        "value": "{{value}}", "measuringUnit": "{{measuringunit}}", "descUrl": "{{descurl}}" }'>
+                        <option value='{ "id": "{{id}}", "name": "{{name}}", "title": "{{title}}", "achievement": "{{achievement}}",
+                        "wasAwardedBy": "{{wasawardedby}}", "grade": "{{grade}}",
+                        "awardingBodyDescription": "{{awardingbodydescription}}", "ects": "{{ects}}" }'>
                             {{name}}</option>
                     {{/certTemplates}}
                 </select>
@@ -77,54 +77,44 @@
                 <button disabled class="btn btn-danger" id="deleteTemplate">Delete template</button>
                 <hr>
             </div>
-            <h2>Certificate</h2>
+            <h2>Verifiable Credential</h2>
             <hr>
             <form id="issueCert">
-                <label for="certTitle">Title</label>
-                <input type="text" class="form-control" id="certTitle" name="title"
-                       placeholder="e.g. Cyber Security Workshop Certificate"><br>
-                <label for="unitId">Unit ID</label>
-                <input type="text" disabled class="form-control" id="unitId" name="unitId" value="{{courseId}}"
-                       placeholder="Unit ID"><br>
-                <input type="checkbox" id="unitIdDisclaimer">
-                <small class="text-muted">I understand that manually changing Unit ID can lead to students not
-                    seeing their certificates inside of Moodle EduCTX activity</small><br><br>
+                <label for="title">Title</label>
+                <input type="text" class="form-control" id="title" name="title"
+                       placeholder="e.g. Cyber Security Workshop VC"><br>
+
                 <label for="achievement">Achievement</label>
                 <input type="text" class="form-control" id="achievement" name="achievement"
                        placeholder="e.g. Certified Cyber Security Expert"><br>
-                <label for="certShortDesc">Short Description</label>
-                <textarea maxlength="100" id="certShortDesc" class="form-control" name="certShortDesc" form="issueCert"
-                          placeholder="Successfully completed Cyber Security Workshop 2021, held in Maribor at FERI UM."></textarea><br>
-                <label for="certType">Certificate Type</label>
-                <input type="text" class="form-control" id="certType" name="certType"
-                       placeholder="e.g. Certificate"><br>
-                <label for="value">Value</label>
-                <input type="text" class="form-control" style="width: 25%;" id="value" name="certValue"
-                       placeholder="e.g. 10"><br>
-                <label for="value">Measurement Unit</label>
-                <input type="text" class="form-control" style="width: 25%;" id="measureUnit" name="measureUnit"
-                       placeholder="e.g. Grade"><br>
-                <label for="descriptionUrl">Description URL</label>
-                <input type="text" class="form-control" id="descriptionUrl" name="descriptionUrl"
-                       placeholder="https://www.example.com/">
+
+                <label for="wasAwardedBy">Portable Unique Identifier of the Awarding process</label>
+                <input type="text" class="form-control" id="wasAwardedBy" name="wasAwardedBy"><br>
+
+                <label for="grade">Grade</label>
+                <input type="text" class="form-control" id="grade" name="grade" placeholder="e.g. 10"><br>
+
+                <label for="awardingBodyDescription">Awarding Body Description</label>
+                <input type="text" class="form-control" id="awardingBodyDescription" name="awardingBodyDescription"
+                       placeholder="e.g. University of Maribor"><br>
+
+                <label for="ects">ECTS</label>
+                <input type="text" class="form-control" style="width: 25%;" id="ects" name="ects"
+                       placeholder="e.g. 6"><br>
             </form>
             <hr>
             <h2 id="receiverHeading">Student</h2>
             <div id="issueCertReceiver">
                 <label for="students">Name and Surname</label>
-                <select class="form-control" style="width: 35%;" name="students" id="students">
-                    <option disabled selected value> Select a student</option>
+                <select class="form-control" style="width: 35%;" name="students[]" id="students" multiple>
                     {{#students}}
-                        <option value='{ "id": "{{eductxid}}", "mid": "{{id}}", "idNumber": "{{idnumber}}",
-                        "firstName": "{{firstname}} {{middlename}}", "lastName": "{{lastname}}" }'>
+                        <option value='{ "did": "{{did}}", "mid": "{{id}}", "idNumber": "{{idnumber}}",
+                        "firstName": "{{firstname}}{{#middlename}} {{middlename}}{{/middlename}}", "lastName": "{{lastname}}" }'>
                             {{firstname}} {{middlename}} {{lastname}}</option>
                     {{/students}}
                 </select><br>
-                <label for="studentId">Student ID</label>
-                <input type="text" style="width: 25%;" class="form-control" id="studentId" name="studentId"
-                       placeholder="e.g. 1234567890">
                 <hr>
-                <button class="btn btn-primary" id="issueCertificate">Issue certificate</button>
+                <button class="btn btn-primary" id="issueCertificate" disabled>Issue VC</button>
                 <hr>
                 <h2>Save Template</h2>
                 <label for="templateName">Template name</label>
@@ -134,13 +124,7 @@
                 <button class="btn btn-primary" id="saveTemplate">Save template</button>
             </div>
         </div>
-        <div id="decryptFlow" hidden>
-            <h2 id="studentCertTitle">Certificates</h2>
-            <p>Export and enter your private key to view certificates</p>
-            <hr>
-            <input type="text" class="form-control" id="privKey" placeholder="Private Key"><br>
-            <button id="decryptButton" class="btn btn-primary">Decrypt</button>
-        </div>
+        <button hidden class="btn btn-primary" id="refreshCredentials">Refresh</button>
         <div id="viewCertFlow" hidden>
         </div>
     </div>
@@ -150,7 +134,8 @@
             <p><i>{{role}}</i></p>
             <hr>
             <p><label id="networkElement">{{networkPlaceholder}}</label></p>
-            <p>You are currently connected to the EduCTX network with account <b><label id="addressElement">{{addressPlaceholder}}</label></b>.</p>
+            <p>You are currently connected to the EduCTX network with account <b><label
+                    id="addressElement">{{addressPlaceholder}}</label></b>.</p>
         </div>
     </div>
 </div>

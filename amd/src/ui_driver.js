@@ -11,31 +11,29 @@ define(["mod_eductx/main",
   "mod_eductx/eth_ecies",
   "mod_eductx/web3_driver",
   "mod_eductx/contract_driver",
-  "mod_eductx/get_pdf_content"
-  ], function(main, Buffer, Jpack, Pdfmake, Ecies, w3d, cd, pdf) {
+  "mod_eductx/get_pdf_content",
+  "mod_eductx/connector"
+], function(main, Buffer, Jpack, Pdfmake, Ecies, w3d, cd, pdf, Connector) {
   // Modules variables
   let web3;
-  let registeredUserContract;
-  let eduCTXcaContract;
-  let eduCTXtokenContract;
-  let contractsInitiated = false;
 
   // Vars passed from server-side
-  let moodleEduCtxId;
+  let moodleDid;
+  // eslint-disable-next-line no-unused-vars
   let currentUnitId;
+  let isAuthorized;
+  let endpoint = "http://localhost:3001";
 
   // Module inits
-  const buffer = Buffer.init();
-  const jpack = Jpack.init();
-  const ecies = Ecies.init();
-  const pdfmake = Pdfmake.init();
-  // const Fonts = fonts.init();
+  // const buffer = Buffer.init();
+  // const jpack = Jpack.init();
+  // const ecies = Ecies.init();
+  // const pdfmake = Pdfmake.init();
+  const connector = Connector.init();
+  let masca;
 
   // Global vars
-  let eduCtxId;
-  let address;
-  let moodleAddress;
-  let net;
+  let did;
 
   // Const data
   const UI = {
@@ -44,43 +42,43 @@ define(["mod_eductx/main",
   const ERROR = {
     INFO: "alert alert-info", DANGER: "alert alert-danger", SUCCESS: "alert alert-success", WARNING: "alert alert-warning"
   };
-  const networkData = [{
-    chainId: "0x7E2", chainName: "EduCTX", rpcUrls: ["https://bclabum.informatika.uni-mb.si/besu/"], nativeCurrency: {
-      name: "ETHEREUM", symbol: "ETH", decimals: 18,
-    }
-  }];
 
   /**
    * Initializes event listeners for issue certificate button
    */
-  const initializeEventListeners = () => {
-    // Connect wallet button
-    document.getElementById("connectButton").addEventListener('click', () => {
-      w3d.connectClientProvider((success) => {
+  const initializeEventListeners = async() => {
+    document.getElementById("wasAwardedBy").value = window.location.origin;
+    // Connect Masca button
+    document.getElementById("connectButton").addEventListener('click', async() => {
+      document.getElementById("connectButton").disabled = true;
+      await w3d.connectClientProvider(async(success) => {
         if (!success) {
           updateErrorReporting("Wallet not installed", "Please consider installing" +
             "<a href='https://metamask.io/'>Metamask</a>.", ERROR.DANGER);
+          document.getElementById("connectButton").disabled = false;
           return;
         }
-        updateCurrentAccountData();
         initializeProviderEventListeners();
+        await initMasca();
+        await updateCurrentAccountData();
       });
     });
     // Issue certificate button
     document.getElementById("issueCertificate").addEventListener('click', () => {
-      issueCert();
+      issueCredentials();
+    });
+
+    document.getElementById('students').addEventListener('change', function() {
+      document.getElementById("issueCertificate").disabled = document.getElementById("students").selectedOptions.length <= 0;
+    });
+
+    document.getElementById("refreshCredentials").addEventListener("click", () => {
+      showCredentials();
     });
 
     // Overwrite account in Moodle DB button
     document.getElementById("useAccountButton").addEventListener("click", () => {
-      saveEduCtxIdToDb(eduCtxId);
-    });
-
-    // Decrypt certificates button
-    document.getElementById("decryptButton").addEventListener("click", () => {
-      const privKey = document.getElementById("privKey").value;
-      document.getElementById("decryptButton").disabled = true;
-      showCertificates(privKey);
+      saveDidToDb(did);
     });
 
     // Issue another certificate button
@@ -88,11 +86,6 @@ define(["mod_eductx/main",
       document.getElementById("issueAnother").hidden = true;
       updateUI(UI.AP);
       updateErrorReporting("", "", ERROR.SUCCESS);
-    });
-
-    // Unit ID checkbox disclaimer
-    document.getElementById("unitIdDisclaimer").addEventListener("change", (e) => {
-      document.getElementById("unitId").disabled = !e.target.checked;
     });
 
     // Use this account instead checkbox disclaimer
@@ -111,18 +104,31 @@ define(["mod_eductx/main",
       document.getElementById("deleteTemplate").disabled = false;
     });
 
-    // Update fields on template selection
-    document.getElementById("students").addEventListener('change', (e) => {
-      let student = JSON.parse(e.target.value);
-      if (student.idnumber !== "") {
-        document.getElementById("studentId").value = student.idNumber;
-      }
-    });
-
     // Delete template button
     document.getElementById("deleteTemplate").addEventListener("click", () => {
       deleteTemplate();
     });
+  };
+
+  const initMasca = async() => {
+    const address = await w3d.getAddressInUse();
+    const enableResult = await connector.enableMasca(address, {
+      snapId: "npm:@blockchain-lab-um/masca",
+      version: "v1.1.0",
+      supportedMethods: ["did:key"]
+    });
+    if (connector.isError(enableResult)) {
+      // FIXME: This error is shown as [Object object]
+      updateErrorReporting("Error connecting Masca", "There has been an error enabling Masca", ERROR.DANGER);
+      throw new Error(enableResult.error);
+    }
+    masca = await enableResult.data.getMascaApi();
+    did = (await masca.getDID()).data;
+    // eslint-disable-next-line no-unused-vars
+    if (!isAuthorized) {
+      showCredentials();
+    }
+    updateUI(UI.STUDENT);
   };
 
   /**
@@ -134,15 +140,18 @@ define(["mod_eductx/main",
         updateCurrentAccountData();
       });
       // On Provider Account Change
-      window.ethereum.on("accountsChanged", (accounts) => {
+      window.ethereum.on("accountsChanged", async(accounts) => {
         if (accounts.length === 0) {
           document.getElementById("connectButton").hidden = false;
         }
-        updateCurrentAccountData();
-      });
-      // On Provider Network Change
-      window.ethereum.on("chainChanged", () => {
-        contractsInitiated = false;
+        const setAccountRes = await masca.setCurrentAccount({
+          currentAccount: accounts[0]
+        });
+
+        if (connector.isError(setAccountRes)) {
+          updateUI();
+          return;
+        }
         updateCurrentAccountData();
       });
       // On Provider Disconnect
@@ -156,32 +165,28 @@ define(["mod_eductx/main",
    * Prompts Metamask to confirm transaction and issue certificate to selected user
    * @return {Promise<void>}
    */
-  const issueCert = async() => {
-    // Get data and prepare object for issue
-    address = await w3d.getAddressInUse();
-    let dropDown = document.getElementById('students');
-    const eduCtxReceiverId = JSON.parse(dropDown.options[dropDown.selectedIndex].value).id;
-    const receiverAddress = await registeredUserContract.methods.getAddressById(Number(eduCtxReceiverId)).call();
-    let pubKey = await registeredUserContract.methods.getUserPubKeyById(Number(eduCtxReceiverId)).call();
-    pubKey = pubKey.substring(2); // Remove trailing 0x
-
-    let cert = await buildJSONCertificateFromFields();
-    cert.person.ethAddress = receiverAddress;
-    const compressed = jpack.pack(cert).toString();
-    const compressedBuf = buffer.Buffer.from(compressed);
-    const pubKeyBuf = buffer.Buffer.from(pubKey, 'hex');
-    const encrypted = await ecies.encrypt(pubKeyBuf, compressedBuf).toString('hex');
-    let certHash = await web3.utils.keccak256(JSON.stringify(cert)).toString('hex');
-    certHash = certHash.substring(2); // Remove trailing 0x
-    await eduCTXtokenContract.methods.issueCertificateAuthorizedAddress(Number(eduCtxReceiverId), certHash, encrypted)
-      .send({from: address}, (err) => {
-        if (err) {
-          updateErrorReporting("Issue failed", "Could not issue the certificate", ERROR.DANGER);
-        } else {
-          updateErrorReporting("Certificate issued", "The certificate has been successfully issued", ERROR.SUCCESS);
-        }
-        updateUI(UI.CERT_ISSUED);
+  const issueCredentials = async() => {
+    const url = `${endpoint}/issue-deferred/batch`;
+    let credentialSubjects = await buildCredentialSubjects();
+    const headers = {
+      'Content-Type': 'application/json',
+      'schemaType': '#educationCredentialBatch',
+    };
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(credentialSubjects),
       });
+
+      if (!response.ok) {
+        updateErrorReporting("Error issuing credentials", "There has been an error issuing credentials", ERROR.DANGER);
+        return;
+      }
+      updateErrorReporting("Credentials issued successfully", "Your credentials have been issued successfully.", ERROR.SUCCESS);
+    } catch (error) {
+      updateErrorReporting("Error issuing credentials", "There has been an error issuing credentials", ERROR.DANGER);
+    }
   };
 
   /**
@@ -192,15 +197,6 @@ define(["mod_eductx/main",
     // Validate network
     if (window.ethereum && window.ethereum.isConnected()) {
       updateUI(UI.NONE);
-      net = (await w3d.getNetworkInUse()).toString();
-      if (net !== "2018") {
-        updateErrorReporting("Wrong network", "Please accept the change in Metamask", ERROR.DANGER);
-        document.getElementById("connectButton").hidden = false;
-        await window.ethereum.request({
-          method: "wallet_addEthereumChain", params: networkData,
-        });
-        return;
-      }
     } else {
       // There's no provider detected
       document.getElementById("connectFlow").hidden = false;
@@ -209,16 +205,9 @@ define(["mod_eductx/main",
         "Please consider installing <a href='https://metamask.io/'>Metamask</a>", ERROR.DANGER);
       return;
     }
-    if (!contractsInitiated) {
-      initContracts();
-    }
-    address = await w3d.getAddressInUse();
-    moodleAddress = "";
-    if (moodleEduCtxId) {
-      moodleAddress = await registeredUserContract.methods.getAddressById(moodleEduCtxId).call();
-    }
-    if (!address) {
-      address = "0x0000000000000000000000000000000000000000";
+    did = (await masca.getDID()).data;
+    if (!did) {
+      did = "did:key:waiting";
     }
     web3 = await w3d.getWeb3Instance();
     const accounts = await web3.eth.getAccounts();
@@ -229,45 +218,32 @@ define(["mod_eductx/main",
       return;
     }
 
-    eduCtxId = await registeredUserContract.methods.getIDbyAddress(address).call();
-    const isRegistered = await registeredUserContract.methods.isRegisteredUser(eduCtxId).call();
-    const isAuthorized = await eduCTXcaContract.methods.isAuthorizedAddress(address).call();
+    did = (await masca.getDID()).data;
 
     // User registered on ECTX, but not in Moodle DB, insert ECTX into DB
-    if (isRegistered && moodleEduCtxId === null) {
-      saveEduCtxIdToDb(eduCtxId); // Submits form
+    if (moodleDid === null) {
+      saveDidToDb(did); // Submits form
       return;
     }
     // User is registered on both platforms but is currently not using the correct account
-    if (eduCtxId !== moodleEduCtxId && moodleEduCtxId !== null) {
+    if (did !== moodleDid && moodleDid !== null) {
       updateUI(UI.NOT_IN_SYNC);
-      updateErrorReporting("Connected account not linked to your Moodle account",
+      updateErrorReporting("Connected DID not linked to your Moodle account",
         `Currently connected account is not linked to your Moodle account.
-                        Please change your account in MetaMask to <b>${moodleAddress}</b>
+                        Please change your account in MetaMask to <b>${moodleDid}</b>
                         or link the connected account.`, ERROR.WARNING);
       return;
     }
 
-    // User is not registered at all - a case where user's eduCtxId exists in Moodle's DB and not on blockchain
+    // User is not registered at all - a case where user's did exists in Moodle's DB and not on blockchain
     // should never happen
-    if (!isRegistered) {
-      // First registration
-      handleFirstRegistration();
-    } else {
-      // Provider and accounts connected
-      presentFlow(isAuthorized);
-    }
-  };
-
-  /**
-   * Initialize contracts
-   */
-  const initContracts = () => {
-    cd.initializeContracts();
-    registeredUserContract = cd.getContractInstance("registeredUser");
-    eduCTXcaContract = cd.getContractInstance("eduCTXca");
-    eduCTXtokenContract = cd.getContractInstance("eduCTXtoken");
-    contractsInitiated = true;
+    // if (!isRegistered) {
+    // First registration
+    // handleFirstRegistration();
+    // } else {
+    // Provider and accounts connected
+    presentFlow(isAuthorized);
+    // }
   };
 
   /**
@@ -276,8 +252,6 @@ define(["mod_eductx/main",
    */
   const presentFlow = (isAuthorized) => {
     if (isAuthorized) {
-      // Can issue certs
-      document.getElementById("unitId").value += "/" + address;
       let eligibleStudents = document.getElementById("students");
       if (eligibleStudents.options.length === 0) {
         document.getElementById("issueCertReceiver").hidden = true;
@@ -294,146 +268,179 @@ define(["mod_eductx/main",
     updateErrorReporting("", "", ERROR.SUCCESS);
   };
 
-  /**
-   * Handles first registration
-   */
-  const handleFirstRegistration = () => {
-    updateUI(UI.NONE);
-    updateErrorReporting("Account not registered", "Please accept registration in Metamask or switch to your EduCTX Account",
-      ERROR.WARNING);
-    eduCtxId = generateId(8);
-    w3d.getPublicKey(async(pubKey) => {
-      pubKey = "0x" + pubKey;
-      updateErrorReporting("Account not registered", "After confirmation you will be automatically redirected", ERROR.INFO);
-      const result = await registeredUserContract.methods.registerUser(address, pubKey, Number(eduCtxId))
-        .send({from: address});
-      if (result) {
-        // Successful registration to ECTX platform
-        saveEduCtxIdToDb(eduCtxId);
-      } else {
-        updateErrorReporting("Registration failed", "Could not complete registration", ERROR.DANGER);
+  const proofOfPossession = async(url) => {
+    const response = await fetch(url);
+    const signedData = await masca.signData({
+      type: "JWT",
+      data: {
+        header: {
+          typ: "JWT"
+        },
+        payload: await response.json(),
       }
     });
+
+    if (connector.isError(signedData)) {
+      updateErrorReporting("Failed to sign the data",
+        "There has been an error signing the proof of possession data.", ERROR.DANGER);
+    }
+    return signedData.data;
+  };
+
+  const getCredentialsWithPop = async() => {
+    const url = `${endpoint}/query`;
+    const proof = await proofOfPossession(`${url}/nonce/${did}`);
+    const claimResponse = await fetch(`${url}/claim`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-pop': proof
+      },
+    });
+    return await claimResponse.json();
   };
 
   /**
    * Fetches and shows current user's certificates
-   * @param {string} privKey - Private key to decrypt certs
    */
-  const showCertificates = async(privKey) => {
-    // Fetch certs
-    address = await w3d.getAddressInUse();
-    const ciphers = await cd.fetchCertificates(address);
-    if (ciphers.length === 0) {
-      document.getElementById("viewCertFlow").innerHTML = "<h2>No certificates yet</h2>\n";
-      document.getElementById("decryptFlow").hidden = true;
+  const showCredentials = async() => {
+    const vcs = await getCredentialsWithPop();
+    did = (await masca.getDID()).data;
+    if (vcs.length === 0) {
+      document.getElementById("viewCertFlow").innerHTML = "<h2>No credentials yet</h2>\n";
       return;
     }
+    document.getElementById("viewCertFlow").innerHTML = buildCredentialsTable(vcs);
+    document.querySelectorAll(".claim-credential").forEach(btn => {
+      btn.addEventListener('click', async function() {
+        // eslint-disable-next-line no-console
+        this.disabled = true;
+        const credObj = JSON.parse(this.dataset.cred);
+        const saved = await saveCredential(credObj);
+        if (saved) {
+          const deleted = await requestDeletion(credObj.id);
+          if (deleted) {
+            document.getElementById(credObj.id).hidden = true;
+          }
+        }
+        this.disabled = false;
+      });
+    });
 
-    const certs = decryptCerts(ciphers, privKey);
-    if (!certs) {
-      document.getElementById("decryptButton").hidden = false;
-      return;
-    }
-    const certTable = await buildCertTable(certs);
-    document.getElementById("decryptFlow").hidden = true;
-    document.getElementById("viewCertFlow").innerHTML = certTable;
-    document.querySelectorAll(".export-cert").forEach(btn => {
-      btn.addEventListener('click', function() {
-        const cert = JSON.parse(this.dataset.cert);
-        exportPdf(cert);
+    document.querySelectorAll(".reject-credential").forEach(btn => {
+      btn.addEventListener('click', async function() {
+        this.disabled = true;
+        const credObj = JSON.parse(this.dataset.cred);
+        const rejected = await requestDeletion(credObj.id);
+        if (rejected) {
+          document.getElementById(credObj.id).hidden = true;
+        }
       });
     });
     updateErrorReporting("", "", ERROR.SUCCESS);
   };
 
   /**
-   * Decrypts passed ciphers with passed private key
-   * @param {[obj]} ciphers - Ciphers to decrypt
-   * @param {string} privKey - Private key
-   * @return {[obj]}
-   */
-  const decryptCerts = (ciphers, privKey) => {
-    const privKeyBuffer = buffer.Buffer.from(privKey, "hex");
-    let certs = [];
-    ciphers.forEach((cipher) => {
-      try {
-        const packedCertBuf = ecies.decrypt(privKeyBuffer, buffer.Buffer.from(cipher, "hex"));
-        const packedCert = buffer.Buffer.from(packedCertBuf, "hex").toString();
-        const cert = jpack.unpack(packedCert);
-        if (cert.certificate.unitId === currentUnitId + "/" + cert.ca.ethAddress) {
-          certs.push(cert);
-        }
-      } catch (ex) {
-        updateErrorReporting("Could not decrypt certificates", "The private key provided is incorrect", ERROR.DANGER);
-        certs = null;
-      } finally {
-        document.getElementById("decryptButton").disabled = false;
-      }
-    });
-    return certs;
-  };
-  /**
    * Build PDF and export the cert
    * @param {obj} certificate - Certificate to build PDF for
    */
-  const exportPdf = async(certificate) => {
-    // Pdfmake.vfs = Fonts.pdfMake.vfs;
-    pdfmake.fonts = {
-      Roboto: {
-        normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
-        bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf',
-        italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf',
-        bolditalics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
-      },
-    };
-    const docDefinition = await pdf.getContent(certificate);
-    // eslint-disable-next-line no-console
-    console.log(docDefinition);
-    pdfmake
-      .createPdf(docDefinition)
-      .download(
-        certificate.person.firstName +
-        '_' +
-        certificate.person.lastName +
-        '_' +
-        certificate.certificate.unitTitle + ".pdf"
-      );
-
-    // eslint-disable-next-line no-console
-    console.log(certificate);
-  };
+  // const exportPdf = async(certificate) => {
+  //   // Pdfmake.vfs = Fonts.pdfMake.vfs;
+  //   pdfmake.fonts = {
+  //     Roboto: {
+  //       normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
+  //       bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf',
+  //       italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf',
+  //       bolditalics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
+  //     },
+  //   };
+  //   const docDefinition = await pdf.getContent(certificate);
+  //   // eslint-disable-next-line no-console
+  //   console.log(docDefinition);
+  //   pdfmake
+  //     .createPdf(docDefinition)
+  //     .download(
+  //       certificate.person.firstName +
+  //       '_' +
+  //       certificate.person.lastName +
+  //       '_' +
+  //       certificate.certificate.unitTitle + ".pdf"
+  //     );
+  //
+  //   // eslint-disable-next-line no-console
+  //   console.log(certificate);
+  // };
 
   /**
    * Build HTML table to show certificates
-   * @param {[obj]} certs - Certificates to show
+   * @param {[obj]} vcs - Certificates to show
    * @return {string}
    */
-  const buildCertTable = (certs) => {
-    let certTable;
-    if (certs.length === 0) {
-      certTable = "<h2>No certificates yet</h2>";
+  const buildCredentialsTable = (vcs) => {
+    let credentialsTable;
+    if (vcs.length === 0) {
+      credentialsTable = "<h2>No credentials yet</h2>";
     } else {
-      certTable = "<h2 id='shownCertsTitle'>Certificates</h2><hr>";
-      certTable += "<div style=\"overflow-x: scroll;\"><table class='table'>" +
-        "<thead><th>Title</th>" + "<th>Achievement</th><th>Type</th><th>Value</th><th></th></thead>" +
+      credentialsTable = "<h2 id='shownCertsTitle'>Certificates</h2><hr>";
+      credentialsTable += "<div style=\"overflow-x: scroll;\"><table class='table'>" +
+        "<thead><th>Type</th>" +
+        "<th>Title</th><th>Achievement</th><th>Grade</th><th>Awarding Body</th><th>ECTS</th><th></th><th></th></thead>" +
         "<tbody>";
-      certs.forEach((cert) => {
-        certTable += "<tr>";
-        certTable += `<td>${cert.certificate.unitTitle !== "" ? cert.certificate.unitTitle : "-"}</td>`;
-        certTable += `<td>${cert.certificate.certificateTitle !== "" ? cert.certificate.certificateTitle : "-"}</td>`;
-        certTable += `<td>${cert.certificate.type !== "" ? cert.certificate.type : "-"}</td>`;
-        certTable += `<td>
-                                ${cert.certificate.value !== "" ? cert.certificate.value : "-"} ${cert.certificate.unitMeasurement}
-                              </td>`;
-        certTable += `<td>
-                    <button data-cert='${JSON.stringify(cert)}' class="btn btn-primary export-cert">PDF
+      vcs.forEach((credObj) => {
+        const cred = credObj.credential;
+        credentialsTable += `<tr id='${credObj.id}'>`;
+        credentialsTable += `<td>${cred.type[1] !== "" ? cred.type[1] : "-"}</td>`;
+        credentialsTable += `<td>${cred.credentialSubject.achieved.title}</td>`;
+        credentialsTable += `<td>${cred.credentialSubject.achieved.title}</td>`;
+        credentialsTable += `<td>${cred.credentialSubject.achieved.wasDerivedFrom.grade}</td>`;
+        credentialsTable += `<td>${cred.credentialSubject.achieved.wasAwardedBy.awardingBodyDescription}</td>`;
+        credentialsTable += `<td>${cred.credentialSubject.achieved.specifiedBy.eCTSCreditPoints}</td>`;
+        credentialsTable += `<td>
+                    <button data-cred='${JSON.stringify(credObj)}' class="btn btn-primary claim-credential">Claim
                     </input>`;
-        certTable += "</tr>";
+        credentialsTable += `<td>
+                    <button data-cred='${JSON.stringify(credObj)}' class="btn btn-danger reject-credential">Reject
+                    </input>`;
+        credentialsTable += "</tr>";
       });
-      certTable += "</tbody></table></div>";
+      credentialsTable += "</tbody></table></div>";
     }
-    return certTable;
+    return credentialsTable;
+  };
+
+  const saveCredential = async(credObj) => {
+    const credential = credObj.credential;
+    const res = await masca.saveCredential(credential, {
+      store: ['snap'],
+    });
+    if (connector.isError(res)) {
+      updateErrorReporting("Error saving credential", "There has been an error trying to save the credential", ERROR.DANGER);
+      return false;
+    }
+    updateErrorReporting("Credential saved", "The credential has been saved successfully", ERROR.SUCCESS);
+    return true;
+  };
+
+  const requestDeletion = async(id) => {
+    const url = `${endpoint}/query`;
+    const proof = await proofOfPossession(`${endpoint}/query/nonce/${did}`);
+    try {
+      const response = await fetch(`${url}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-pop': proof,
+        },
+      });
+      if (!response.ok) {
+        updateErrorReporting("Deletion failed", "Unable to delete the remote credential", ERROR.WARNING);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      updateErrorReporting("Deletion failed", "Unable to delete the remote credential", ERROR.WARNING);
+      return false;
+    }
   };
 
   /**
@@ -441,23 +448,22 @@ define(["mod_eductx/main",
    * @param {obj} template - Certificate fields from template {}
    */
   const updateFields = (template) => {
-    document.getElementById("certTitle").value = template.title;
+    document.getElementById("title").value = template.title;
     document.getElementById("achievement").value = template.achievement;
-    document.getElementById("certShortDesc").value = template.shortDesc;
-    document.getElementById("certType").value = template.type;
-    document.getElementById("value").value = template.value;
-    document.getElementById("measureUnit").value = template.measuringUnit;
-    document.getElementById("descriptionUrl").value = template.descUrl;
+    document.getElementById("wasAwardedBy").value = template.wasAwardedBy;
+    document.getElementById("grade").value = template.grade;
+    document.getElementById("awardingBodyDescription").value = template.awardingBodyDescription;
+    document.getElementById("ects").value = template.ects;
   };
 
   /**
-   * Insert eduCtxId into Moodle DB
-   * @param {string} eduCtxId
+   * Insert did into Moodle DB
+   * @param {string} receivedDid
    */
-  const saveEduCtxIdToDb = (eduCtxId) => {
+  const saveDidToDb = (receivedDid) => {
     const form = document.getElementById("getIdForm");
-    document.getElementById("id_eductxid").value = eduCtxId;
-    document.getElementById("id_address").value = address;
+    document.getElementById("id_did").value = receivedDid;
+    document.getElementById("id_address").value = did;
     form.submit();
   };
 
@@ -467,13 +473,12 @@ define(["mod_eductx/main",
   const saveTemplateToDb = () => {
     const form = document.getElementById("saveTemplateForm");
     document.getElementById("id_name").value = document.getElementById("templateName").value;
-    document.getElementById("id_certTitle").value = document.getElementById("certTitle").value;
-    document.getElementById("id_shortDesc").value = document.getElementById("certShortDesc").value;
+    document.getElementById("id_title").value = document.getElementById("title").value;
     document.getElementById("id_achievement").value = document.getElementById("achievement").value;
-    document.getElementById("id_type").value = document.getElementById("certType").value;
-    document.getElementById("id_value").value = document.getElementById("value").value;
-    document.getElementById("id_measuringUnit").value = document.getElementById("measureUnit").value;
-    document.getElementById("id_descUrl").value = document.getElementById("descriptionUrl").value;
+    document.getElementById("id_wasAwardedBy").value = document.getElementById("wasAwardedBy").value;
+    document.getElementById("id_grade").value = document.getElementById("grade").value;
+    document.getElementById("id_awardingBodyDescription").value = document.getElementById("awardingBodyDescription").value;
+    document.getElementById("id_ects").value = document.getElementById("ects").value;
     form.submit();
   };
 
@@ -485,29 +490,14 @@ define(["mod_eductx/main",
   };
 
   /**
-   * Generates a random n-digit random used for EduCTX ID
-   * @param {Number} numOfDigits - Length of generated number
-   * @return {string}
-   */
-  const generateId = (numOfDigits) => {
-    let id = '';
-    for (let i = 0; i < numOfDigits; i++) {
-      let min = (i === 0) ? 1 : 0;
-      let max = 9;
-      let digit = Math.floor(Math.random() * (max - min + 1) + min);
-      id += digit.toString();
-    }
-    return id;
-  };
-
-  /**
    * Updates current UI based on user's account
    * @param {string} option - Enum value
    */
   const updateUI = (option) => {
-    if (address) {
-      const addrString = address.substring(0, 5) + "..." + address.substring(address.length - 4, address.length);
+    if (did) {
+      const addrString = did.substring(0, 5) + "..." + did.substring(did.length - 4, did.length);
       document.getElementById("addressElement").innerHTML = addrString;
+      document.getElementById("addressElement").innerHTML = did;
     }
     // Example of getting url of an image with moodle js lib
     const imgSrc = M.util.image_url("tick", "mod_eductx");
@@ -519,14 +509,14 @@ define(["mod_eductx/main",
         document.getElementById("useAccountFlow").hidden = true;
         document.getElementById("viewCertFlow").hidden = false;
         document.getElementById("userData").hidden = false;
-        document.getElementById("decryptFlow").hidden = false;
+        document.getElementById("refreshCredentials").hidden = false;
         break;
 
       case UI.AP:
         document.getElementById("viewCertFlow").hidden = true;
         document.getElementById("useAccountFlow").hidden = true;
         document.getElementById("connectFlow").hidden = true;
-        document.getElementById("decryptFlow").hidden = true;
+        document.getElementById("refreshCredentials").hidden = true;
         document.getElementById("issueFlow").hidden = false;
         document.getElementById("userData").hidden = false;
         break;
@@ -535,7 +525,7 @@ define(["mod_eductx/main",
         document.getElementById("viewCertFlow").hidden = true;
         document.getElementById("useAccountFlow").hidden = true;
         document.getElementById("connectFlow").hidden = true;
-        document.getElementById("decryptFlow").hidden = true;
+        document.getElementById("refreshCredentials").hidden = true;
         document.getElementById("issueFlow").hidden = true;
         document.getElementById("userData").hidden = false;
         document.getElementById("issueAnother").hidden = false;
@@ -545,7 +535,7 @@ define(["mod_eductx/main",
         document.getElementById("viewCertFlow").hidden = true;
         document.getElementById("useAccountFlow").hidden = true;
         document.getElementById("connectFlow").hidden = true;
-        document.getElementById("decryptFlow").hidden = true;
+        document.getElementById("refreshCredentials").hidden = true;
         document.getElementById("issueFlow").hidden = true;
         document.getElementById("userData").hidden = false;
         break;
@@ -553,15 +543,15 @@ define(["mod_eductx/main",
       case UI.NONE:
         document.getElementById("viewCertFlow").hidden = true;
         document.getElementById("useAccountFlow").hidden = true;
+        document.getElementById("refreshCredentials").hidden = true;
         document.getElementById("issueFlow").hidden = true;
         document.getElementById("userData").hidden = true;
-        document.getElementById("decryptFlow").hidden = true;
         document.getElementById("connectFlow").hidden = false;
         break;
 
       case UI.NOT_IN_SYNC:
-        document.getElementById("decryptFlow").hidden = true;
         document.getElementById("issueFlow").hidden = true;
+        document.getElementById("refreshCredentials").hidden = true;
         document.getElementById("connectFlow").hidden = true;
         document.getElementById("viewCertFlow").hidden = true;
         document.getElementById("useAccountFlow").hidden = false;
@@ -602,40 +592,65 @@ define(["mod_eductx/main",
    * Return JSON object, data from input fields
    * @return {Promise<{obj}>}
    */
-  const buildJSONCertificateFromFields = async() => {
+  const buildCredentialSubjects = async() => {
     let dropDown = document.getElementById('students');
-    const eduCtxReceiverData = JSON.parse(dropDown.options[dropDown.selectedIndex].value);
-    address = await w3d.getAddressInUse();
-    let caAddress = await eduCTXcaContract.methods.getAuthorizedAddressCa(address).call();
-    let caMetadata = await eduCTXcaContract.methods.getCaMetaData(caAddress).call();
-    return {
-      eductxVersion: "2.0", timestamp: Date.now().toString(), person: {
-        id: document.getElementById("studentId").value,
-        firstName: eduCtxReceiverData.firstName,
-        lastName: eduCtxReceiverData.lastName,
-        ethAddress: "",
-        eduCTXid: eduCtxReceiverData.id,
-      }, ca: {
-        fullName: caMetadata[1], logoURI: caMetadata[0], ethAddress: address
-      }, certificate: {
-        type: document.getElementById("certType").value,
-        certificateTitle: document.getElementById("achievement").value,
-        unitId: document.getElementById("unitId").value,
-        unitTitle: document.getElementById("certTitle").value,
-        shortDescription: document.getElementById("certShortDesc").value,
-        fullDescriptionURI: document.getElementById("descriptionUrl").value,
-        value: document.getElementById("value").value,
-        unitMeasurement: document.getElementById("measureUnit").value,
+    const selectedValues = [];
+    for (let i = 0; i < dropDown.options.length; i++) {
+      if (dropDown.options[i].selected) {
+        const value = JSON.parse(dropDown.options[i].value);
+        selectedValues.push({
+          credentialSubject: {
+            currentFamilyName: value.lastName,
+            currentGivenName: value.firstName,
+            did: value.did,
+            dateOfBirth: null,
+            personIdentifier: null,
+            achieved: {
+              id: null,
+              title: document.getElementById("achievement").value,
+              specifiedBy: {
+                id: null,
+                title: "Example", // Course iz moodla ime
+                volumeOfLearning: null,
+                iSCEDFCode: null,
+                eCTSCreditPoints: document.getElementById("ects").value
+              },
+              wasAwardedBy: {
+                id: document.getElementById("wasAwardedBy").value,
+                awardingBody: null,
+                awardingBodyDescription: document.getElementById("awardingBodyDescription").value,
+                awardingDate: null,
+                awardingLocation: null
+              },
+              wasDerivedFrom: {
+                id: null,
+                title: document.getElementById("title").value,
+                grade: document.getElementById("grade").value,
+                issuedDate: Date.now().toString()
+              },
+              associatedLearningOpportunity: null
+            }
+          }
+        });
       }
-    };
+    }
+    return selectedValues;
   };
 
   /**
-   * Saves Moodle's user EduCTX ID to a variable in this AMD scope
+   * Saves Moodle's user DID to a variable in this AMD scope
    * @param {string} id - id to save locally for use with registration
    */
   const sendIdToJs = (id) => {
-    moodleEduCtxId = id;
+    moodleDid = id;
+  };
+
+  /**
+   * Saves Moodle's isAuthorized to a variable in this AMD scope
+   * @param {string} authorized - variable to save locally for use with registration
+   */
+  const sendAuthorizedToJs = (authorized) => {
+    isAuthorized = authorized;
   };
 
   /**
@@ -647,7 +662,7 @@ define(["mod_eductx/main",
   };
 
   return {
-    initializeEventListeners, updateCurrentAccountData, updateErrorReporting, sendIdToJs, sendUnitIdToJs
+    initializeEventListeners, updateCurrentAccountData, updateErrorReporting, sendIdToJs, sendUnitIdToJs, sendAuthorizedToJs
   };
 });
 
