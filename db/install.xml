@@ -25,18 +25,17 @@
             </KEYS>
         </TABLE>
 <!--        Templates table with foreign key pointing to user-->
-        <TABLE NAME="templates" COMMENT="Stores teacher's certificate templates">
+        <TABLE NAME="templates" COMMENT="Stores teacher's credential templates">
             <FIELDS>
                 <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
                 <FIELD NAME="teacherid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Foreign key user.id."/>
                 <FIELD NAME="name" TYPE="text" LENGTH="125" NOTNULL="true" SEQUENCE="false" COMMENT="Template name."/>
-                <FIELD NAME="certtitle" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Certificate title."/>
-                <FIELD NAME="achievement" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Certificate achievement."/>
-                <FIELD NAME="shortdesc" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Certificate short description."/>
-                <FIELD NAME="type" TYPE="text" LENGTH="150" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Certificate type."/>
-                <FIELD NAME="value" TYPE="text" LENGTH="10" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Certificate value."/>
-                <FIELD NAME="measuringunit" TYPE="text" LENGTH="50" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Certificate measuring unit."/>
-                <FIELD NAME="descurl" TYPE="text" LENGTH="150" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Certificate description URL."/>
+                <FIELD NAME="title" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Credential title."/>
+                <FIELD NAME="achievement" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Credential achievement."/>
+                <FIELD NAME="wasawardedby" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Portable unique identifier of the awarding process."/>
+                <FIELD NAME="grade" TYPE="text" LENGTH="10" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Final grade."/>
+                <FIELD NAME="awardingbodydescription" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Credential awarding body description."/>
+                <FIELD NAME="ects" TYPE="text" LENGTH="10" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="ECTS value."/>
             </FIELDS>
             <KEYS>
                 <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

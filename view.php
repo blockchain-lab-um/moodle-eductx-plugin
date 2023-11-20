@@ -99,13 +99,12 @@ if ($fromform = $savetemplateform->get_data()) {
     $templateobj = new stdClass();
     $templateobj->teacherid = $USER->id;
     $templateobj->name = $fromform->name;
-    $templateobj->certtitle = $fromform->certTitle;
+    $templateobj->title = $fromform->title;
     $templateobj->achievement = $fromform->achievement;
-    $templateobj->shortdesc = $fromform->shortDesc;
-    $templateobj->type = $fromform->type;
-    $templateobj->value = $fromform->value;
-    $templateobj->measuringunit = $fromform->measuringUnit;
-    $templateobj->descurl = $fromform->descUrl;
+    $templateobj->wasawardedby = $fromform->wasAwardedBy;
+    $templateobj->grade = $fromform->grade;
+    $templateobj->ects = $fromform->ects;
+    $templateobj->awardingbodydescription = $fromform->awardingBodyDescription;
     $DB->insert_record("templates", $templateobj);
     $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "updateErrorReporting",
         ["Template Saved", "Template <b>" . $fromform->name . "</b> has been saved.", "alert alert-success"]);
