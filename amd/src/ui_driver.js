@@ -22,13 +22,13 @@ define(["mod_eductx/main",
   // eslint-disable-next-line no-unused-vars
   let currentUnitId;
   let isAuthorized;
-  let endpoint = "http://localhost:3000";
+  let endpoint = "http://localhost:3001";
 
   // Module inits
   // const buffer = Buffer.init();
   // const jpack = Jpack.init();
   // const ecies = Ecies.init();
-  const pdfmake = Pdfmake.init();
+  // const pdfmake = Pdfmake.init();
   const connector = Connector.init();
   let masca;
 
@@ -47,6 +47,7 @@ define(["mod_eductx/main",
    * Initializes event listeners for issue certificate button
    */
   const initializeEventListeners = async() => {
+    document.getElementById("wasAwardedBy").value = window.location.origin;
     // Connect Masca button
     document.getElementById("connectButton").addEventListener('click', async() => {
       document.getElementById("connectButton").disabled = true;
@@ -87,11 +88,6 @@ define(["mod_eductx/main",
       updateErrorReporting("", "", ERROR.SUCCESS);
     });
 
-    // Unit ID checkbox disclaimer
-    document.getElementById("unitIdDisclaimer").addEventListener("change", (e) => {
-      document.getElementById("unitId").disabled = !e.target.checked;
-    });
-
     // Use this account instead checkbox disclaimer
     document.getElementById("useAccountDisclaimer").addEventListener("change", (e) => {
       document.getElementById("useAccountButton").disabled = !e.target.checked;
@@ -106,14 +102,6 @@ define(["mod_eductx/main",
     document.getElementById("templates").addEventListener('change', (e) => {
       updateFields(JSON.parse(e.target.value));
       document.getElementById("deleteTemplate").disabled = false;
-    });
-
-    // Update fields on template selection
-    document.getElementById("students").addEventListener('change', (e) => {
-      let student = JSON.parse(e.target.value);
-      if (student.idnumber !== "") {
-        document.getElementById("studentId").value = student.idNumber;
-      }
     });
 
     // Delete template button
@@ -137,7 +125,9 @@ define(["mod_eductx/main",
     masca = await enableResult.data.getMascaApi();
     did = (await masca.getDID()).data;
     // eslint-disable-next-line no-unused-vars
-    showCredentials();
+    if (!isAuthorized) {
+      showCredentials();
+    }
     updateUI(UI.STUDENT);
   };
 
@@ -176,16 +166,13 @@ define(["mod_eductx/main",
    * @return {Promise<void>}
    */
   const issueCredentials = async() => {
-    const url = `${endpoint}/issue-deferred/batch`; // Replace with your actual URL
+    const url = `${endpoint}/issue-deferred/batch`;
     let credentialSubjects = await buildCredentialSubjects();
     const headers = {
       'Content-Type': 'application/json',
-      'schemaType': '#didSchemaBatch',
+      'schemaType': '#educationCredentialBatch',
     };
-
     try {
-      // eslint-disable-next-line no-console
-      console.log(credentialSubjects);
       const response = await fetch(url, {
         method: 'POST',
         headers: headers,
@@ -200,15 +187,6 @@ define(["mod_eductx/main",
     } catch (error) {
       updateErrorReporting("Error issuing credentials", "There has been an error issuing credentials", ERROR.DANGER);
     }
-    // Get data and prepare object for issue
-    // did = await w3d.getAddressInUse();
-    // let dropDown = document.getElementById('students');
-    // const receiverDid = JSON.parse(dropDown.options[dropDown.selectedIndex].value).id;
-    // // eslint-disable-next-line no-console
-    // console.log(receiverDid);
-    // let cert = await buildJSONCertificateFromFields();
-    // cert.person.ethAddress = receiverDid;
-    // TODO: issue VC below
   };
 
   /**
@@ -227,7 +205,7 @@ define(["mod_eductx/main",
         "Please consider installing <a href='https://metamask.io/'>Metamask</a>", ERROR.DANGER);
       return;
     }
-    did = await w3d.getAddressInUse();
+    did = (await masca.getDID()).data;
     if (!did) {
       did = "did:key:waiting";
     }
@@ -274,8 +252,6 @@ define(["mod_eductx/main",
    */
   const presentFlow = (isAuthorized) => {
     if (isAuthorized) {
-      // Can issue certs
-      document.getElementById("unitId").value += "/" + did;
       let eligibleStudents = document.getElementById("students");
       if (eligibleStudents.options.length === 0) {
         document.getElementById("issueCertReceiver").hidden = true;
@@ -292,15 +268,8 @@ define(["mod_eductx/main",
     updateErrorReporting("", "", ERROR.SUCCESS);
   };
 
-  const proofOfPossession = async() => {
-    const url = `${endpoint}/query`;
-    const response = await fetch(`${url}/nonce`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({did: did})
-    });
+  const proofOfPossession = async(url) => {
+    const response = await fetch(url);
     const signedData = await masca.signData({
       type: "JWT",
       data: {
@@ -315,40 +284,57 @@ define(["mod_eductx/main",
       updateErrorReporting("Failed to sign the data",
         "There has been an error signing the proof of possession data.", ERROR.DANGER);
     }
+    return signedData.data;
+  };
+
+  const getCredentialsWithPop = async() => {
+    const url = `${endpoint}/query`;
+    const proof = await proofOfPossession(`${url}/nonce/${did}`);
     const claimResponse = await fetch(`${url}/claim`, {
-      method: 'POST',
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-pop': proof
       },
-      body: JSON.stringify({proof: signedData.data})
     });
-    const res = await claimResponse.json();
-    // eslint-disable-next-line no-console
-    console.log(res);
+    return await claimResponse.json();
   };
 
   /**
    * Fetches and shows current user's certificates
    */
   const showCredentials = async() => {
-    await proofOfPossession();
-// Fetch certs
-    const vcs = [];
-    did = await w3d.getAddressInUse();
-    // const vcs = await masca.queryCredentials();
-    if (connector.isError(vcs)) {
-      updateErrorReporting("Error fetching credentials", "The credentials could not be loaded at the moment.", ERROR.DANGER);
-      return;
-    }
-    if (vcs.data.length === 0) {
+    const vcs = await getCredentialsWithPop();
+    did = (await masca.getDID()).data;
+    if (vcs.length === 0) {
       document.getElementById("viewCertFlow").innerHTML = "<h2>No credentials yet</h2>\n";
       return;
     }
-    document.getElementById("viewCertFlow").innerHTML = buildCertTable(vcs.data);
-    document.querySelectorAll(".export-cert").forEach(btn => {
-      btn.addEventListener('click', function() {
-        const cert = JSON.parse(this.dataset.cert);
-        exportPdf(cert);
+    document.getElementById("viewCertFlow").innerHTML = buildCredentialsTable(vcs);
+    document.querySelectorAll(".claim-credential").forEach(btn => {
+      btn.addEventListener('click', async function() {
+        // eslint-disable-next-line no-console
+        this.disabled = true;
+        const credObj = JSON.parse(this.dataset.cred);
+        const saved = await saveCredential(credObj);
+        if (saved) {
+          const deleted = await requestDeletion(credObj.id);
+          if (deleted) {
+            document.getElementById(credObj.id).hidden = true;
+          }
+        }
+        this.disabled = false;
+      });
+    });
+
+    document.querySelectorAll(".reject-credential").forEach(btn => {
+      btn.addEventListener('click', async function() {
+        this.disabled = true;
+        const credObj = JSON.parse(this.dataset.cred);
+        const rejected = await requestDeletion(credObj.id);
+        if (rejected) {
+          document.getElementById(credObj.id).hidden = true;
+        }
       });
     });
     updateErrorReporting("", "", ERROR.SUCCESS);
@@ -358,55 +344,62 @@ define(["mod_eductx/main",
    * Build PDF and export the cert
    * @param {obj} certificate - Certificate to build PDF for
    */
-  const exportPdf = async(certificate) => {
-    // Pdfmake.vfs = Fonts.pdfMake.vfs;
-    pdfmake.fonts = {
-      Roboto: {
-        normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
-        bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf',
-        italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf',
-        bolditalics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
-      },
-    };
-    const docDefinition = await pdf.getContent(certificate);
-    // eslint-disable-next-line no-console
-    console.log(docDefinition);
-    pdfmake
-      .createPdf(docDefinition)
-      .download(
-        certificate.person.firstName +
-        '_' +
-        certificate.person.lastName +
-        '_' +
-        certificate.certificate.unitTitle + ".pdf"
-      );
-
-    // eslint-disable-next-line no-console
-    console.log(certificate);
-  };
+  // const exportPdf = async(certificate) => {
+  //   // Pdfmake.vfs = Fonts.pdfMake.vfs;
+  //   pdfmake.fonts = {
+  //     Roboto: {
+  //       normal: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Regular.ttf',
+  //       bold: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Medium.ttf',
+  //       italics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-Italic.ttf',
+  //       bolditalics: 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.66/fonts/Roboto/Roboto-MediumItalic.ttf'
+  //     },
+  //   };
+  //   const docDefinition = await pdf.getContent(certificate);
+  //   // eslint-disable-next-line no-console
+  //   console.log(docDefinition);
+  //   pdfmake
+  //     .createPdf(docDefinition)
+  //     .download(
+  //       certificate.person.firstName +
+  //       '_' +
+  //       certificate.person.lastName +
+  //       '_' +
+  //       certificate.certificate.unitTitle + ".pdf"
+  //     );
+  //
+  //   // eslint-disable-next-line no-console
+  //   console.log(certificate);
+  // };
 
   /**
    * Build HTML table to show certificates
    * @param {[obj]} vcs - Certificates to show
    * @return {string}
    */
-  const buildCertTable = (vcs) => {
+  const buildCredentialsTable = (vcs) => {
     let credentialsTable;
     if (vcs.length === 0) {
       credentialsTable = "<h2>No credentials yet</h2>";
     } else {
       credentialsTable = "<h2 id='shownCertsTitle'>Certificates</h2><hr>";
       credentialsTable += "<div style=\"overflow-x: scroll;\"><table class='table'>" +
-        "<thead><th>Type</th>" + "<th>Issuer</th><th>Type</th><th>Value</th><th></th></thead>" +
+        "<thead><th>Type</th>" +
+        "<th>Title</th><th>Achievement</th><th>Grade</th><th>Awarding Body</th><th>ECTS</th><th></th><th></th></thead>" +
         "<tbody>";
-      vcs.forEach((cred) => {
-        credentialsTable += "<tr>";
-        credentialsTable += `<td>${cred.data.type[1] !== "" ? cred.data.type[1] : "-"}</td>`;
-        credentialsTable += `<td>${cred.data.issuer !== "" ? cred.data.issuer : "-"}</td>`;
-        credentialsTable += `<td></td>`;
-        credentialsTable += `<td></td>`;
+      vcs.forEach((credObj) => {
+        const cred = credObj.credential;
+        credentialsTable += `<tr id='${credObj.id}'>`;
+        credentialsTable += `<td>${cred.type[1] !== "" ? cred.type[1] : "-"}</td>`;
+        credentialsTable += `<td>${cred.credentialSubject.achieved.title}</td>`;
+        credentialsTable += `<td>${cred.credentialSubject.achieved.title}</td>`;
+        credentialsTable += `<td>${cred.credentialSubject.achieved.wasDerivedFrom.grade}</td>`;
+        credentialsTable += `<td>${cred.credentialSubject.achieved.wasAwardedBy.awardingBodyDescription}</td>`;
+        credentialsTable += `<td>${cred.credentialSubject.achieved.specifiedBy.eCTSCreditPoints}</td>`;
         credentialsTable += `<td>
-                    <button data-cert='${JSON.stringify(cred)}' class="btn btn-primary export-cert">PDF
+                    <button data-cred='${JSON.stringify(credObj)}' class="btn btn-primary claim-credential">Claim
+                    </input>`;
+        credentialsTable += `<td>
+                    <button data-cred='${JSON.stringify(credObj)}' class="btn btn-danger reject-credential">Reject
                     </input>`;
         credentialsTable += "</tr>";
       });
@@ -415,18 +408,52 @@ define(["mod_eductx/main",
     return credentialsTable;
   };
 
+  const saveCredential = async(credObj) => {
+    const credential = credObj.credential;
+    const res = await masca.saveCredential(credential, {
+      store: ['snap'],
+    });
+    if (connector.isError(res)) {
+      updateErrorReporting("Error saving credential", "There has been an error trying to save the credential", ERROR.DANGER);
+      return false;
+    }
+    updateErrorReporting("Credential saved", "The credential has been saved successfully", ERROR.SUCCESS);
+    return true;
+  };
+
+  const requestDeletion = async(id) => {
+    const url = `${endpoint}/query`;
+    const proof = await proofOfPossession(`${endpoint}/query/nonce/${did}`);
+    try {
+      const response = await fetch(`${url}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-pop': proof,
+        },
+      });
+      if (!response.ok) {
+        updateErrorReporting("Deletion failed", "Unable to delete the remote credential", ERROR.WARNING);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      updateErrorReporting("Deletion failed", "Unable to delete the remote credential", ERROR.WARNING);
+      return false;
+    }
+  };
+
   /**
    * Updates certificate fields from saved template
    * @param {obj} template - Certificate fields from template {}
    */
   const updateFields = (template) => {
-    document.getElementById("certTitle").value = template.title;
+    document.getElementById("title").value = template.title;
     document.getElementById("achievement").value = template.achievement;
-    document.getElementById("certShortDesc").value = template.shortDesc;
-    document.getElementById("certType").value = template.type;
-    document.getElementById("value").value = template.value;
-    document.getElementById("measureUnit").value = template.measuringUnit;
-    document.getElementById("descriptionUrl").value = template.descUrl;
+    document.getElementById("wasAwardedBy").value = template.wasAwardedBy;
+    document.getElementById("grade").value = template.grade;
+    document.getElementById("awardingBodyDescription").value = template.awardingBodyDescription;
+    document.getElementById("ects").value = template.ects;
   };
 
   /**
@@ -446,13 +473,12 @@ define(["mod_eductx/main",
   const saveTemplateToDb = () => {
     const form = document.getElementById("saveTemplateForm");
     document.getElementById("id_name").value = document.getElementById("templateName").value;
-    document.getElementById("id_certTitle").value = document.getElementById("certTitle").value;
-    document.getElementById("id_shortDesc").value = document.getElementById("certShortDesc").value;
+    document.getElementById("id_title").value = document.getElementById("title").value;
     document.getElementById("id_achievement").value = document.getElementById("achievement").value;
-    document.getElementById("id_type").value = document.getElementById("certType").value;
-    document.getElementById("id_value").value = document.getElementById("value").value;
-    document.getElementById("id_measuringUnit").value = document.getElementById("measureUnit").value;
-    document.getElementById("id_descUrl").value = document.getElementById("descriptionUrl").value;
+    document.getElementById("id_wasAwardedBy").value = document.getElementById("wasAwardedBy").value;
+    document.getElementById("id_grade").value = document.getElementById("grade").value;
+    document.getElementById("id_awardingBodyDescription").value = document.getElementById("awardingBodyDescription").value;
+    document.getElementById("id_ects").value = document.getElementById("ects").value;
     form.submit();
   };
 
@@ -572,29 +598,43 @@ define(["mod_eductx/main",
     for (let i = 0; i < dropDown.options.length; i++) {
       if (dropDown.options[i].selected) {
         const value = JSON.parse(dropDown.options[i].value);
-        selectedValues.push({credentialSubject: {id: value.did, test: "test"}});
+        selectedValues.push({
+          credentialSubject: {
+            currentFamilyName: value.lastName,
+            currentGivenName: value.firstName,
+            did: value.did,
+            dateOfBirth: null,
+            personIdentifier: null,
+            achieved: {
+              id: null,
+              title: document.getElementById("achievement").value,
+              specifiedBy: {
+                id: null,
+                title: "Example", // Course iz moodla ime
+                volumeOfLearning: null,
+                iSCEDFCode: null,
+                eCTSCreditPoints: document.getElementById("ects").value
+              },
+              wasAwardedBy: {
+                id: document.getElementById("wasAwardedBy").value,
+                awardingBody: null,
+                awardingBodyDescription: document.getElementById("awardingBodyDescription").value,
+                awardingDate: null,
+                awardingLocation: null
+              },
+              wasDerivedFrom: {
+                id: null,
+                title: document.getElementById("title").value,
+                grade: document.getElementById("grade").value,
+                issuedDate: Date.now().toString()
+              },
+              associatedLearningOpportunity: null
+            }
+          }
+        });
       }
     }
     return selectedValues;
-    // TODO: build correct VC or credentialSubject
-    // return {
-    //   eductxVersion: "2.0", timestamp: Date.now().toString(), person: {
-    //     id: document.getElementById("studentId").value,
-    //     firstName: receiverDidData.firstName,
-    //     lastName: receiverDidData.lastName,
-    //     ethAddress: "",
-    //     eduCTXid: receiverDidData.id,
-    //   }, certificate: {
-    //     type: document.getElementById("certType").value,
-    //     certificateTitle: document.getElementById("achievement").value,
-    //     unitId: document.getElementById("unitId").value,
-    //     unitTitle: document.getElementById("certTitle").value,
-    //     shortDescription: document.getElementById("certShortDesc").value,
-    //     fullDescriptionURI: document.getElementById("descriptionUrl").value,
-    //     value: document.getElementById("value").value,
-    //     unitMeasurement: document.getElementById("measureUnit").value,
-    //   }
-    // };
   };
 
   /**
