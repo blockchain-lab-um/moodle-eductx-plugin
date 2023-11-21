@@ -602,7 +602,7 @@ define(["mod_eductx/main",
           credentialSubject: {
             currentFamilyName: value.lastName,
             currentGivenName: value.firstName,
-            did: value.did,
+            id: value.did,
             dateOfBirth: null,
             personIdentifier: null,
             achieved: {
