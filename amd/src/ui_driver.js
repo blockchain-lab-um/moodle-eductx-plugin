@@ -48,6 +48,33 @@ define(["mod_eductx/main",
    */
   const initializeEventListeners = async() => {
     document.getElementById("wasAwardedBy").value = window.location.origin;
+    if (isAuthorized) {
+      document.getElementById("connectFlow").hidden = true;
+      document.getElementById("issueCertificate").addEventListener('click', () => {
+        issueCredentials();
+      });
+      document.getElementById('students').addEventListener('change', function() {
+        document.getElementById("issueCertificate").disabled = document.getElementById("students").selectedOptions.length <= 0;
+      });
+      document.getElementById("issueAnotherButton").addEventListener("click", () => {
+        document.getElementById("issueAnother").hidden = true;
+        updateUI(UI.AP);
+        updateErrorReporting("", "", ERROR.SUCCESS);
+      });
+      document.getElementById("saveTemplate").addEventListener("click", () => {
+        saveTemplateToDb();
+      });
+      document.getElementById("templates").addEventListener('change', (e) => {
+        updateFields(JSON.parse(e.target.value));
+        document.getElementById("deleteTemplate").disabled = false;
+      });
+      document.getElementById("deleteTemplate").addEventListener("click", () => {
+        deleteTemplate();
+      });
+      updateUI(UI.AP);
+      return;
+    }
+    document.getElementById("connectFlow").hidden = false;
     // Connect Masca button
     document.getElementById("connectButton").addEventListener('click', async() => {
       document.getElementById("connectButton").disabled = true;
@@ -63,50 +90,14 @@ define(["mod_eductx/main",
         await updateCurrentAccountData();
       });
     });
-    // Issue certificate button
-    document.getElementById("issueCertificate").addEventListener('click', () => {
-      issueCredentials();
-    });
-
-    document.getElementById('students').addEventListener('change', function() {
-      document.getElementById("issueCertificate").disabled = document.getElementById("students").selectedOptions.length <= 0;
-    });
-
     document.getElementById("refreshCredentials").addEventListener("click", () => {
       showCredentials();
     });
-
-    // Overwrite account in Moodle DB button
     document.getElementById("useAccountButton").addEventListener("click", () => {
       saveDidToDb(did);
     });
-
-    // Issue another certificate button
-    document.getElementById("issueAnotherButton").addEventListener("click", () => {
-      document.getElementById("issueAnother").hidden = true;
-      updateUI(UI.AP);
-      updateErrorReporting("", "", ERROR.SUCCESS);
-    });
-
-    // Use this account instead checkbox disclaimer
     document.getElementById("useAccountDisclaimer").addEventListener("change", (e) => {
       document.getElementById("useAccountButton").disabled = !e.target.checked;
-    });
-
-    // Save template button
-    document.getElementById("saveTemplate").addEventListener("click", () => {
-      saveTemplateToDb();
-    });
-
-    // Update fields on template selection
-    document.getElementById("templates").addEventListener('change', (e) => {
-      updateFields(JSON.parse(e.target.value));
-      document.getElementById("deleteTemplate").disabled = false;
-    });
-
-    // Delete template button
-    document.getElementById("deleteTemplate").addEventListener("click", () => {
-      deleteTemplate();
     });
   };
 
@@ -497,11 +488,7 @@ define(["mod_eductx/main",
     if (did) {
       const addrString = did.substring(0, 5) + "..." + did.substring(did.length - 4, did.length);
       document.getElementById("addressElement").innerHTML = addrString;
-      document.getElementById("addressElement").innerHTML = did;
     }
-    // Example of getting url of an image with moodle js lib
-    const imgSrc = M.util.image_url("tick", "mod_eductx");
-    document.getElementById("networkElement").innerHTML = `<img src="${imgSrc}" alt="conn_success"> Connected to Network`;
     switch (option) {
       case UI.STUDENT:
         document.getElementById("connectFlow").hidden = true;
@@ -510,6 +497,7 @@ define(["mod_eductx/main",
         document.getElementById("viewCertFlow").hidden = false;
         document.getElementById("userData").hidden = false;
         document.getElementById("refreshCredentials").hidden = false;
+        document.getElementById("userData").hidden = true;
         break;
 
       case UI.AP:
@@ -518,7 +506,7 @@ define(["mod_eductx/main",
         document.getElementById("connectFlow").hidden = true;
         document.getElementById("refreshCredentials").hidden = true;
         document.getElementById("issueFlow").hidden = false;
-        document.getElementById("userData").hidden = false;
+        document.getElementById("userData").hidden = true;
         break;
 
       case UI.CERT_ISSUED:
