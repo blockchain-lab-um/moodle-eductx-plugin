@@ -135,8 +135,7 @@ if ($isauthorized) {
 
 echo $OUTPUT->header();
 $templatecontext = (object)[
-    "addressPlaceholder" => "0x000000000000000000000000",
-    "networkPlaceholder" => "0",
+    "addressPlaceholder" => "did:key:example",
     "students" => array_values($eligiblestudents),
     "courseId" => $course->id,
     "eduCtxId" => $did,

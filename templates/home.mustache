@@ -33,109 +33,110 @@
     {
     }
 }}
-<div class="row" style="display: flex; width: 100%; margin: auto;">
-    <div class="col-md-8" style="text-align: left; padding: 15px;">
-        <div id="errorReporting" hidden>
-            <h2 id="errorTitle"></h2>
-            <hr>
-            <p id="error"></p>
-            <div id="useAccountFlow" hidden>
-                <input type="checkbox" id="useAccountDisclaimer">
-                <small class="text-muted">I understand that this action will link new MetaMask account to my Moodle
-                    account</small><br><br>
-                <button id="useAccountButton" class="btn btn-primary" disabled>Link Account</button>
-            </div>
-            <div id="issueAnother" hidden>
-                <button id="issueAnotherButton" class="btn btn-primary">Issue Another</button>
-            </div>
+<div class="row" style="display: flex; flex-direction: column; width: 100%; margin: auto;">
+    <div id="errorReporting" hidden>
+        <h2 id="errorTitle"></h2>
+        <hr>
+        <p id="error"></p>
+        <div id="useAccountFlow" hidden>
+            <input type="checkbox" id="useAccountDisclaimer">
+            <small class="text-muted">I understand that this action will link new MetaMask account to my Moodle
+                account</small><br><br>
+            <button id="useAccountButton" class="btn btn-primary" disabled>Link Account</button>
         </div>
-        <div id="connectFlow" class="connectFlow">
-            <div>
-                <h1 id="connectTitle">{{titleByRole}}</h1>
-            </div>
-            <button class="btn btn-primary" id="connectButton">Connect Masca</button>
-            <p><small class="text-muted">Don't have a wallet yet? <br><a href="https://metamask.io/"
-                                                                         target="_blank">Install
-                one</a></small>
-            </p>
-        </div>
-        <div id="issueFlow" hidden>
-            <h2>Templates</h2>
-            <hr>
-            <div id="templatesDiv">
-                <label for="templates">Name</label>
-                <select class="form-control" style="width: 30%;" name="templates" id="templates">
-                    <option disabled selected value>Select a template</option>
-                    {{#certTemplates}}
-                        <option value='{ "id": "{{id}}", "name": "{{name}}", "title": "{{title}}", "achievement": "{{achievement}}",
-                        "wasAwardedBy": "{{wasawardedby}}", "grade": "{{grade}}",
-                        "awardingBodyDescription": "{{awardingbodydescription}}", "ects": "{{ects}}" }'>
-                            {{name}}</option>
-                    {{/certTemplates}}
-                </select>
-                <br>
-                <button disabled class="btn btn-danger" id="deleteTemplate">Delete template</button>
-                <hr>
-            </div>
-            <h2>Verifiable Credential</h2>
-            <hr>
-            <form id="issueCert">
-                <label for="title">Title</label>
-                <input type="text" class="form-control" id="title" name="title"
-                       placeholder="e.g. Cyber Security Workshop VC"><br>
-
-                <label for="achievement">Achievement</label>
-                <input type="text" class="form-control" id="achievement" name="achievement"
-                       placeholder="e.g. Certified Cyber Security Expert"><br>
-
-                <label for="wasAwardedBy">Portable Unique Identifier of the Awarding process</label>
-                <input type="text" class="form-control" id="wasAwardedBy" name="wasAwardedBy"><br>
-
-                <label for="grade">Grade</label>
-                <input type="text" class="form-control" id="grade" name="grade" placeholder="e.g. 10"><br>
-
-                <label for="awardingBodyDescription">Awarding Body Description</label>
-                <input type="text" class="form-control" id="awardingBodyDescription" name="awardingBodyDescription"
-                       placeholder="e.g. University of Maribor"><br>
-
-                <label for="ects">ECTS</label>
-                <input type="text" class="form-control" style="width: 25%;" id="ects" name="ects"
-                       placeholder="e.g. 6"><br>
-            </form>
-            <hr>
-            <h2 id="receiverHeading">Student</h2>
-            <div id="issueCertReceiver">
-                <label for="students">Name and Surname</label>
-                <select class="form-control" style="width: 35%;" name="students[]" id="students" multiple>
-                    {{#students}}
-                        <option value='{ "did": "{{did}}", "mid": "{{id}}", "idNumber": "{{idnumber}}",
-                        "firstName": "{{firstname}}{{#middlename}} {{middlename}}{{/middlename}}", "lastName": "{{lastname}}" }'>
-                            {{firstname}} {{middlename}} {{lastname}}</option>
-                    {{/students}}
-                </select><br>
-                <hr>
-                <button class="btn btn-primary" id="issueCertificate" disabled>Issue VC</button>
-                <hr>
-                <h2>Save Template</h2>
-                <label for="templateName">Template name</label>
-                <input type="text" style="width: 35%;" class="form-control" id="templateName" name="templateName"
-                       placeholder="e.g. Completed Subject">
-                <br>
-                <button class="btn btn-primary" id="saveTemplate">Save template</button>
-            </div>
-        </div>
-        <button hidden class="btn btn-primary" id="refreshCredentials">Refresh</button>
-        <div id="viewCertFlow" hidden>
+        <div id="issueAnother" hidden>
+            <button id="issueAnotherButton" class="btn btn-primary">Issue Another</button>
         </div>
     </div>
-    <div class="col-md-4" id="userData" hidden>
-        <div style="text-align: left; height: 100%; padding: 15px; box-shadow: 0 0 1px 1px lightgrey; background-color: lightgrey;">
-            <h2>User Info</h2>
-            <p><i>{{role}}</i></p>
+    <div id="connectFlow" hidden class="connectFlow">
+        <div>
+            <h1 id="connectTitle">{{titleByRole}}</h1>
+        </div>
+        <button class="btn btn-primary" id="connectButton">Connect Masca</button>
+        <p><small class="text-muted">Don't have a wallet yet? <br><a href="https://metamask.io/"
+                                                                     target="_blank">Install
+            one</a></small>
+        </p>
+    </div>
+    <div id="issueFlow" hidden>
+        <h2>Templates</h2>
+        <hr>
+        <div id="templatesDiv">
+            <label for="templates">Name</label>
+            <select class="form-control" name="templates" id="templates">
+                <option disabled selected value>Select a template</option>
+                {{#certTemplates}}
+                    <option value='{ "id": "{{id}}", "name": "{{name}}", "title": "{{title}}", "achievement": "{{achievement}}",
+                        "wasAwardedBy": "{{wasawardedby}}", "grade": "{{grade}}",
+                        "awardingBodyDescription": "{{awardingbodydescription}}", "ects": "{{ects}}" }'>
+                        {{name}}</option>
+                {{/certTemplates}}
+            </select>
+            <br>
+            <button disabled class="btn btn-danger" id="deleteTemplate">Delete template</button>
             <hr>
-            <p><label id="networkElement">{{networkPlaceholder}}</label></p>
-            <p>You are currently connected to the EduCTX network with account <b><label
-                    id="addressElement">{{addressPlaceholder}}</label></b>.</p>
+        </div>
+        <h2>Verifiable Credential</h2>
+        <hr>
+        <form id="issueCert">
+            <label for="title">Title</label>
+            <input type="text" class="form-control" id="title" name="title"
+                   placeholder="e.g. Cyber Security Workshop VC"><br>
+
+            <label for="achievement">Achievement</label>
+            <input type="text" class="form-control" id="achievement" name="achievement"
+                   placeholder="e.g. Certified Cyber Security Expert"><br>
+
+            <label for="wasAwardedBy">Portable Unique Identifier of the Awarding process</label>
+            <input type="text" class="form-control" id="wasAwardedBy" name="wasAwardedBy"><br>
+
+            <label for="grade">Grade</label>
+            <input type="text" class="form-control" id="grade" name="grade" placeholder="e.g. 10"><br>
+
+            <label for="awardingBodyDescription">Awarding Body Description</label>
+            <input type="text" class="form-control" id="awardingBodyDescription" name="awardingBodyDescription"
+                   placeholder="e.g. University of Maribor"><br>
+
+            <label for="ects">ECTS</label>
+            <input type="text" class="form-control" style="width: 25%;" id="ects" name="ects"
+                   placeholder="e.g. 6"><br>
+        </form>
+        <hr>
+        <h2 id="receiverHeading">Student</h2>
+        <div id="issueCertReceiver">
+            <label for="students">Name and Surname</label>
+            <select class="form-control" style="width: 35%;" name="students[]" id="students" multiple>
+                {{#students}}
+                    <option value='{ "did": "{{did}}", "mid": "{{id}}", "idNumber": "{{idnumber}}",
+                        "firstName": "{{firstname}}{{#middlename}} {{middlename}}{{/middlename}}", "lastName": "{{lastname}}" }'>
+                        {{firstname}} {{middlename}} {{lastname}}</option>
+                {{/students}}
+            </select><br>
+            <hr>
+            <button class="btn btn-primary" id="issueCertificate" disabled>Issue VC</button>
+            <hr>
+            <h2>Save Template</h2>
+            <label for="templateName">Template name</label>
+            <input type="text" style="width: 35%;" class="form-control" id="templateName" name="templateName"
+                   placeholder="e.g. Completed Subject">
+            <br>
+            <button class="btn btn-primary" id="saveTemplate">Save template</button>
+        </div>
+    </div>
+    <div id="studentFlow">
+        <div class="col-md-8" style="text-align: left; padding: 15px;">
+            <button hidden class="btn btn-primary" id="refreshCredentials">Refresh</button>
+            <div id="viewCertFlow" hidden>
+            </div>
+            <div class="col-md-4" id="userData" hidden>
+                <div style="text-align: left; height: 100%; padding: 15px; box-shadow: 0 0 1px 1px lightgrey; background-color: lightgrey;">
+                    <h2>User Info</h2>
+                    <p><i>{{role}}</i></p>
+                    <hr>
+                    <p>You are currently connected with account <b><label
+                            id="addressElement">{{addressPlaceholder}}</label></b>.</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
