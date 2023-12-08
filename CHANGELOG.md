@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.0-beta.0](https://github.com/blockchain-lab-um/moodle-eductx-plugin/compare/v1.0.0...v1.0.0-beta.0) (2023-12-08)
+
+
+### Bug Fixes
+
+* workflows ([#10](https://github.com/blockchain-lab-um/moodle-eductx-plugin/issues/10)) ([f0f8008](https://github.com/blockchain-lab-um/moodle-eductx-plugin/commit/f0f8008d23360f74120619863c6ce792fdb0c3d5))
+
+
+### Miscellaneous Chores
+
+* release 1.0.0-beta.0 ([2ee53d8](https://github.com/blockchain-lab-um/moodle-eductx-plugin/commit/2ee53d8d9b0bc1dee56f67bff3ad6b266aa768e1))
+
 ## [1.0.0](https://github.com/blockchain-lab-um/moodle-eductx-plugin/compare/v0.1.0-beta...v1.0.0) (2023-12-08)
 
 
