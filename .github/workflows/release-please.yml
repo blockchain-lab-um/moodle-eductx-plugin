@@ -18,5 +18,3 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           release-type: simple
-          pre-release: false
-          default-branch: main
