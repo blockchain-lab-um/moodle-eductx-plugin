@@ -299,8 +299,6 @@ define(["mod_eductx/main",
   const showCredentials = async() => {
     const vcs = await getCredentialsWithPop();
     did = (await masca.getDID()).data;
-    // eslint-disable-next-line no-console
-    console.log(did);
     if (vcs.length === 0) {
       document.getElementById("viewCertFlow").innerHTML = "<h2>No credentials yet</h2>\n";
       return;
