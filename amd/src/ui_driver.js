@@ -23,6 +23,7 @@ define(["mod_eductx/main",
   let currentUnitId;
   let isAuthorized;
   let endpoint = "http://localhost:3001";
+  let apiKey = "placheolderapikey";
 
   // Module inits
   // const buffer = Buffer.init();
@@ -162,6 +163,7 @@ define(["mod_eductx/main",
     const headers = {
       'Content-Type': 'application/json',
       'schemaType': '#educationCredentialBatch',
+      "x-api-key": apiKey
     };
     try {
       const response = await fetch(url, {
@@ -372,7 +374,7 @@ define(["mod_eductx/main",
     if (vcs.length === 0) {
       credentialsTable = "<h2>No credentials yet</h2>";
     } else {
-      credentialsTable = "<h2 id='shownCertsTitle'>Certificates</h2><hr>";
+      credentialsTable = "<h2 id='shownCertsTitle'>My Credentials</h2>";
       credentialsTable += "<div style=\"overflow-x: scroll;\"><table class='table'>" +
         "<thead><th>Type</th>" +
         "<th>Title</th><th>Achievement</th><th>Grade</th><th>Awarding Body</th><th>ECTS</th><th></th><th></th></thead>" +
@@ -486,8 +488,8 @@ define(["mod_eductx/main",
    */
   const updateUI = (option) => {
     if (did) {
-      const addrString = did.substring(0, 5) + "..." + did.substring(did.length - 4, did.length);
-      document.getElementById("addressElement").innerHTML = addrString;
+      document.getElementById("addressElement").innerHTML =
+        did.substring(0, 12) + "..." + did.substring(did.length - 4, did.length);
     }
     switch (option) {
       case UI.STUDENT:
@@ -497,7 +499,6 @@ define(["mod_eductx/main",
         document.getElementById("viewCertFlow").hidden = false;
         document.getElementById("userData").hidden = false;
         document.getElementById("refreshCredentials").hidden = false;
-        document.getElementById("userData").hidden = true;
         break;
 
       case UI.AP:
@@ -641,6 +642,14 @@ define(["mod_eductx/main",
     isAuthorized = authorized;
   };
 
+  const sendIssuerEndpointToJs = (issuerEndpoint) => {
+    endpoint = issuerEndpoint;
+  };
+
+  const sendApiKeyToJs = (issuerApiKey) => {
+    apiKey = issuerApiKey;
+  };
+
   /**
    * Saves Unit Id to a variable in this AMD scope
    * @param {string} unitId
@@ -650,7 +659,14 @@ define(["mod_eductx/main",
   };
 
   return {
-    initializeEventListeners, updateCurrentAccountData, updateErrorReporting, sendIdToJs, sendUnitIdToJs, sendAuthorizedToJs
+    initializeEventListeners,
+    updateCurrentAccountData,
+    updateErrorReporting,
+    sendIdToJs,
+    sendUnitIdToJs,
+    sendAuthorizedToJs,
+    sendIssuerEndpointToJs,
+    sendApiKeyToJs
   };
 });
 

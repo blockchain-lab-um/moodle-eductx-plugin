@@ -123,20 +123,19 @@
             <button class="btn btn-primary" id="saveTemplate">Save template</button>
         </div>
     </div>
-    <div id="studentFlow">
-        <div class="col-md-8" style="text-align: left; padding: 15px;">
-            <button hidden class="btn btn-primary" id="refreshCredentials">Refresh</button>
-            <div id="viewCertFlow" hidden>
+    <div id="studentFlow"
+         style="padding-top: 12px; display: flex;">
+        <div class="col-md-4" id="userData" hidden>
+            <div style="text-align: left; height: 100%; padding: 15px; box-shadow: 0 0 1px 1px lightgrey; background-color: lightgrey;">
+                <h2>User Info</h2>
+                <p><i>{{role}}</i></p>
+                <hr>
+                <p>You are currently connected with account <b><label
+                        id="addressElement">{{addressPlaceholder}}</label></b>.</p>
+                <button hidden class="btn btn-primary" style="width: 100%;" id="refreshCredentials">Refresh Credentials</button>
             </div>
-            <div class="col-md-4" id="userData" hidden>
-                <div style="text-align: left; height: 100%; padding: 15px; box-shadow: 0 0 1px 1px lightgrey; background-color: lightgrey;">
-                    <h2>User Info</h2>
-                    <p><i>{{role}}</i></p>
-                    <hr>
-                    <p>You are currently connected with account <b><label
-                            id="addressElement">{{addressPlaceholder}}</label></b>.</p>
-                </div>
-            </div>
+        </div>
+        <div id="viewCertFlow" class="col-md-8" hidden>
         </div>
     </div>
 </div>

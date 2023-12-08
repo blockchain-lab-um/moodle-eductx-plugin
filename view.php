@@ -12,7 +12,7 @@ require_once($CFG->dirroot . "/mod/eductx/classes/save_template_class.php");
 require_once($CFG->dirroot . "/mod/eductx/classes/delete_template_class.php");
 
 $id = optional_param('id', 0, PARAM_INT); // Course Module ID, or ...
-$a = optional_param('a',  0, PARAM_INT);  // eductx ID.
+$a = optional_param('a', 0, PARAM_INT);  // eductx ID.
 
 if ($id) {
     if (!$cm = get_coursemodule_from_id('eductx', $id)) {
@@ -64,7 +64,7 @@ $roleassignments = $DB->get_records("role_assignments", ["userid" => $USER->id])
 $roles = array();
 
 $isauthorized = false;
-foreach($roleassignments as $role) {
+foreach ($roleassignments as $role) {
     $rolefromid = $DB->get_record("role", ["id" => $role->roleid])->shortname;
     // for the sake of one less DB query maybe change comparison from string to int? less robust?
     if (is_siteadmin() || $rolefromid == "editingteacher" || $rolefromid == "coursecreator" || $rolefromid == "teacher" || $rolefromid == "manager") {
@@ -117,13 +117,16 @@ if ($fromform = $deletetemplateform->get_data()) {
 }
 
 $role = "Regular User (Student)";
+$issuerconfig = get_config("eductx");
+$PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendIssuerEndpointToJs", [$issuerconfig->issuerendpoint]);
 if ($isauthorized) {
+    $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendApiKeyToJs", [$issuerconfig->apikey]);
     // TEACHER'S FLOW
     $role = "Certified Authority (Teacher)";
     $students = get_role_users(5, context_course::instance($course->id));
     $eligiblestudents = array();
     $certtemplates = $DB->get_records("templates", ["teacherid" => $USER->id]);
-    foreach($students as $student) {
+    foreach ($students as $student) {
         $didobj = $DB->get_record("did", ["userid" => $student->id]);
         $did = $didobj->did;
         if ($did != NULL) {
