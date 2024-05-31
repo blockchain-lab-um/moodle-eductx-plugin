@@ -106,7 +106,7 @@ define(["mod_eductx/main",
     const address = await w3d.getAddressInUse();
     const enableResult = await connector.enableMasca(address, {
       snapId: "npm:@blockchain-lab-um/masca",
-      version: "v1.1.0",
+      version: "v1.2.2",
       supportedMethods: ["did:key"]
     });
     if (connector.isError(enableResult)) {
