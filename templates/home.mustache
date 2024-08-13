@@ -105,15 +105,15 @@
         <h2 id="receiverHeading">Student</h2>
         <div id="issueCertReceiver">
             <label for="students">Name and Surname</label>
-            <select class="form-control" style="width: 35%;" name="students[]" id="students" multiple>
+            <select class="form-control" style="width: 35%;" name="students[]" id="students">
                 {{#students}}
-                    <option value='{ "did": "{{did}}", "mid": "{{id}}", "idNumber": "{{idnumber}}",
+                    <option value='{ "did": "{{did}}", "mid": "{{id}}", "email": "{{email}}", "idNumber": "{{idnumber}}",
                         "firstName": "{{firstname}}{{#middlename}} {{middlename}}{{/middlename}}", "lastName": "{{lastname}}" }'>
                         {{firstname}} {{middlename}} {{lastname}}</option>
                 {{/students}}
             </select><br>
             <hr>
-            <button class="btn btn-primary" id="issueCertificate" disabled>Issue VC</button>
+            <button class="btn btn-primary" id="issueCertificate">Issue VC</button>
             <hr>
             <h2>Save Template</h2>
             <label for="templateName">Template name</label>

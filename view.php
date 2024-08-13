@@ -131,8 +131,10 @@ if ($isauthorized) {
         $did = $didobj->did;
         if ($did != NULL) {
             $student->did = $did;
-            $eligiblestudents[] = $student;
+        } else {
+            $student->did = NULL;
         }
+        $eligiblestudents[] = $student;
     }
 }
 

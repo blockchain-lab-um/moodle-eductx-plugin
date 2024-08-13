@@ -13,7 +13,7 @@ define(["mod_eductx/main",
   "mod_eductx/contract_driver",
   "mod_eductx/get_pdf_content",
   "mod_eductx/connector"
-], function(main, Buffer, Jpack, Pdfmake, Ecies, w3d, cd, pdf, Connector) {
+], function (main, Buffer, Jpack, Pdfmake, Ecies, w3d, cd, pdf, Connector) {
   // Modules variables
   let web3;
 
@@ -41,21 +41,21 @@ define(["mod_eductx/main",
     STUDENT: "student", AP: "ap", AP_NO_REC: "apnorec", NONE: "none", NOT_IN_SYNC: "unsynced", CERT_ISSUED: "certissued"
   };
   const ERROR = {
-    INFO: "alert alert-info", DANGER: "alert alert-danger", SUCCESS: "alert alert-success", WARNING: "alert alert-warning"
+    INFO: "alert alert-info",
+    DANGER: "alert alert-danger",
+    SUCCESS: "alert alert-success",
+    WARNING: "alert alert-warning"
   };
 
   /**
    * Initializes event listeners for issue certificate button
    */
-  const initializeEventListeners = async() => {
+  const initializeEventListeners = async () => {
     document.getElementById("wasAwardedBy").value = window.location.origin;
     if (isAuthorized) {
       document.getElementById("connectFlow").hidden = true;
       document.getElementById("issueCertificate").addEventListener('click', () => {
         issueCredentials();
-      });
-      document.getElementById('students').addEventListener('change', function() {
-        document.getElementById("issueCertificate").disabled = document.getElementById("students").selectedOptions.length <= 0;
       });
       document.getElementById("issueAnotherButton").addEventListener("click", () => {
         document.getElementById("issueAnother").hidden = true;
@@ -77,12 +77,12 @@ define(["mod_eductx/main",
     }
     document.getElementById("connectFlow").hidden = false;
     // Connect Masca button
-    document.getElementById("connectButton").addEventListener('click', async() => {
+    document.getElementById("connectButton").addEventListener('click', async () => {
       document.getElementById("connectButton").disabled = true;
-      await w3d.connectClientProvider(async(success) => {
+      await w3d.connectClientProvider(async (success) => {
         if (!success) {
-          updateErrorReporting("Wallet not installed", "Please consider installing" +
-            "<a href='https://metamask.io/'>Metamask</a>.", ERROR.DANGER);
+          updateErrorReporting("Wallet not installed", "Please consider installing " +
+              "<a href='https://metamask.io/'>Metamask</a>.", ERROR.DANGER);
           document.getElementById("connectButton").disabled = false;
           return;
         }
@@ -102,7 +102,7 @@ define(["mod_eductx/main",
     });
   };
 
-  const initMasca = async() => {
+  const initMasca = async () => {
     const address = await w3d.getAddressInUse();
     const enableResult = await connector.enableMasca(address, {
       snapId: "npm:@blockchain-lab-um/masca",
@@ -132,7 +132,7 @@ define(["mod_eductx/main",
         updateCurrentAccountData();
       });
       // On Provider Account Change
-      window.ethereum.on("accountsChanged", async(accounts) => {
+      window.ethereum.on("accountsChanged", async (accounts) => {
         if (accounts.length === 0) {
           document.getElementById("connectButton").hidden = false;
         }
@@ -157,19 +157,24 @@ define(["mod_eductx/main",
    * Prompts Metamask to confirm transaction and issue certificate to selected user
    * @return {Promise<void>}
    */
-  const issueCredentials = async() => {
-    const url = `${endpoint}/issue-deferred/batch`;
-    let credentialSubjects = await buildCredentialSubjects();
-    const headers = {
-      'Content-Type': 'application/json',
-      'schemaType': '#educationCredentialBatch',
-      "x-api-key": apiKey
-    };
+  const issueCredentials = async () => {
+    const url = `${endpoint}/api/issue-oidc`;
+    let {credentialSubject, email} = await buildCredentialSubjects();
+    if (credentialSubject === null) {
+      return;
+    }
+    const headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+    headers.append('schemaType', '#educationCredential');
+    headers.append("x-api-key", apiKey);
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: headers,
-        body: JSON.stringify(credentialSubjects),
+        headers,
+        body: JSON.stringify({
+          email: email,
+          data: {credentialSubject}
+        }),
       });
 
       if (!response.ok) {
@@ -186,7 +191,7 @@ define(["mod_eductx/main",
    * Updates user data
    * @return {Promise<void>}
    */
-  const updateCurrentAccountData = async() => {
+  const updateCurrentAccountData = async () => {
     // Validate network
     if (window.ethereum && window.ethereum.isConnected()) {
       updateUI(UI.NONE);
@@ -195,7 +200,7 @@ define(["mod_eductx/main",
       document.getElementById("connectFlow").hidden = false;
       document.getElementById("issueFlow").hidden = true;
       updateErrorReporting("Metamask not installed",
-        "Please consider installing <a href='https://metamask.io/'>Metamask</a>", ERROR.DANGER);
+          "Please consider installing <a href='https://metamask.io/'> Metamask</a>", ERROR.DANGER);
       return;
     }
     did = (await masca.getDID()).data;
@@ -222,7 +227,7 @@ define(["mod_eductx/main",
     if (did !== moodleDid && moodleDid !== null) {
       updateUI(UI.NOT_IN_SYNC);
       updateErrorReporting("Connected DID not linked to your Moodle account",
-        `Currently connected account is not linked to your Moodle account.
+          `Currently connected account is not linked to your Moodle account.
                         Please change your account in MetaMask to <b>${moodleDid}</b>
                         or link the connected account.`, ERROR.WARNING);
       return;
@@ -261,7 +266,7 @@ define(["mod_eductx/main",
     updateErrorReporting("", "", ERROR.SUCCESS);
   };
 
-  const proofOfPossession = async(url) => {
+  const proofOfPossession = async (url) => {
     const response = await fetch(url);
     const signedData = await masca.signData({
       type: "JWT",
@@ -275,12 +280,12 @@ define(["mod_eductx/main",
 
     if (connector.isError(signedData)) {
       updateErrorReporting("Failed to sign the data",
-        "There has been an error signing the proof of possession data.", ERROR.DANGER);
+          "There has been an error signing the proof of possession data.", ERROR.DANGER);
     }
     return signedData.data;
   };
 
-  const getCredentialsWithPop = async() => {
+  const getCredentialsWithPop = async () => {
     const url = `${endpoint}/query`;
     const proof = await proofOfPossession(`${url}/nonce/${did}`);
     const claimResponse = await fetch(`${url}/claim`, {
@@ -296,18 +301,16 @@ define(["mod_eductx/main",
   /**
    * Fetches and shows current user's certificates
    */
-  const showCredentials = async() => {
+  const showCredentials = async () => {
     const vcs = await getCredentialsWithPop();
     did = (await masca.getDID()).data;
-    // eslint-disable-next-line no-console
-    console.log(did);
     if (vcs.length === 0) {
       document.getElementById("viewCertFlow").innerHTML = "<h2>No credentials yet</h2>\n";
       return;
     }
     document.getElementById("viewCertFlow").innerHTML = buildCredentialsTable(vcs);
     document.querySelectorAll(".claim-credential").forEach(btn => {
-      btn.addEventListener('click', async function() {
+      btn.addEventListener('click', async function () {
         // eslint-disable-next-line no-console
         this.disabled = true;
         const credObj = JSON.parse(this.dataset.cred);
@@ -323,7 +326,7 @@ define(["mod_eductx/main",
     });
 
     document.querySelectorAll(".reject-credential").forEach(btn => {
-      btn.addEventListener('click', async function() {
+      btn.addEventListener('click', async function () {
         this.disabled = true;
         const credObj = JSON.parse(this.dataset.cred);
         const rejected = await requestDeletion(credObj.id);
@@ -378,9 +381,9 @@ define(["mod_eductx/main",
     } else {
       credentialsTable = "<h2 id='shownCertsTitle'>My Credentials</h2>";
       credentialsTable += "<div style=\"overflow-x: scroll;\"><table class='table'>" +
-        "<thead><th>Type</th>" +
-        "<th>Title</th><th>Achievement</th><th>Grade</th><th>Awarding Body</th><th>ECTS</th><th></th><th></th></thead>" +
-        "<tbody>";
+          "<thead><th>Type</th>" +
+          "<th>Title</th><th>Achievement</th><th>Grade</th><th>Awarding Body</th><th>ECTS</th><th></th><th></th></thead>" +
+          "<tbody>";
       vcs.forEach((credObj) => {
         const cred = credObj.credential;
         credentialsTable += `<tr id='${credObj.id}'>`;
@@ -403,7 +406,7 @@ define(["mod_eductx/main",
     return credentialsTable;
   };
 
-  const saveCredential = async(credObj) => {
+  const saveCredential = async (credObj) => {
     const credential = credObj.credential;
     const res = await masca.saveCredential(credential, {
       store: ['snap'],
@@ -416,7 +419,7 @@ define(["mod_eductx/main",
     return true;
   };
 
-  const requestDeletion = async(id) => {
+  const requestDeletion = async (id) => {
     const url = `${endpoint}/query`;
     const proof = await proofOfPossession(`${endpoint}/query/nonce/${did}`);
     try {
@@ -491,7 +494,7 @@ define(["mod_eductx/main",
   const updateUI = (option) => {
     if (did) {
       document.getElementById("addressElement").innerHTML =
-        did.substring(0, 12) + "..." + did.substring(did.length - 4, did.length);
+          did.substring(0, 12) + "..." + did.substring(did.length - 4, did.length);
     }
     switch (option) {
       case UI.STUDENT:
@@ -583,49 +586,46 @@ define(["mod_eductx/main",
    * Return JSON object, data from input fields
    * @return {Promise<{obj}>}
    */
-  const buildCredentialSubjects = async() => {
+  const buildCredentialSubjects = async () => {
     let dropDown = document.getElementById('students');
-    const selectedValues = [];
-    for (let i = 0; i < dropDown.options.length; i++) {
-      if (dropDown.options[i].selected) {
-        const value = JSON.parse(dropDown.options[i].value);
-        selectedValues.push({
-          credentialSubject: {
-            currentFamilyName: value.lastName,
-            currentGivenName: value.firstName,
-            id: value.did,
-            dateOfBirth: null,
-            personIdentifier: null,
-            achieved: {
+    if (dropDown.value) {
+      const value = JSON.parse(dropDown.value);
+      return {
+        credentialSubject: {
+          currentFamilyName: value.lastName,
+          currentGivenName: value.firstName,
+          id: value.did || null,
+          dateOfBirth: null,
+          personIdentifier: null,
+          achieved: {
+            id: null,
+            title: document.getElementById("achievement").value || null,
+            specifiedBy: {
               id: null,
-              title: document.getElementById("achievement").value,
-              specifiedBy: {
-                id: null,
-                title: "Example", // Course iz moodla ime
-                volumeOfLearning: null,
-                iSCEDFCode: null,
-                eCTSCreditPoints: document.getElementById("ects").value
-              },
-              wasAwardedBy: {
-                id: document.getElementById("wasAwardedBy").value,
-                awardingBody: null,
-                awardingBodyDescription: document.getElementById("awardingBodyDescription").value,
-                awardingDate: null,
-                awardingLocation: null
-              },
-              wasDerivedFrom: {
-                id: null,
-                title: document.getElementById("title").value,
-                grade: document.getElementById("grade").value,
-                issuedDate: Date.now().toString()
-              },
-              associatedLearningOpportunity: null
-            }
+              title: "Example", // Course iz moodla ime
+              volumeOfLearning: null,
+              iSCEDFCode: null,
+              eCTSCreditPoints: document.getElementById("ects").value
+            },
+            wasAwardedBy: {
+              id: document.getElementById("wasAwardedBy").value,
+              awardingBody: null,
+              awardingBodyDescription: document.getElementById("awardingBodyDescription").value,
+              awardingDate: null,
+              awardingLocation: null
+            },
+            wasDerivedFrom: {
+              id: null,
+              title: document.getElementById("title").value,
+              grade: document.getElementById("grade").value,
+              issuedDate: Date.now().toString()
+            },
+            associatedLearningOpportunity: null
           }
-        });
-      }
+        }, email: value.email
+      };
     }
-    return selectedValues;
+    return {credentialSubject: null, email: null};
   };
 
   /**
