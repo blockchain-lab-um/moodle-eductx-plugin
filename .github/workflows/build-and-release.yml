@@ -21,8 +21,8 @@ jobs:
         with:
           node-version: '14.15'
 
-      - name: Run grunt
-        run: npx grunt
+      - name: Install and run grunt 
+        run: npm install -g grunt && grunt
 
       - name: Zip files
         run: zip -r release.zip .
