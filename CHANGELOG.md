@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.0-beta.0](https://github.com/blockchain-lab-um/moodle-eductx-plugin/compare/v2.0.0-beta.0...v2.1.0-beta.0) (2024-08-13)
+
+
+### Features
+
+* send vcs via mail ([f911484](https://github.com/blockchain-lab-um/moodle-eductx-plugin/commit/f911484607ae046786e70760bf6e786a10f1784f))
+
 ## [1.0.0-beta.0](https://github.com/blockchain-lab-um/moodle-eductx-plugin/compare/v0.1.0-beta...v1.0.0-beta.0) (2024-05-31)
 
 
