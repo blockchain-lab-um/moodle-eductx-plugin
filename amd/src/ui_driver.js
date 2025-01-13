@@ -173,7 +173,15 @@ define(["mod_eductx/main",
         headers,
         body: JSON.stringify({
           email: email,
-          data: {credentialSubject}
+          data: {
+            credential_type: [
+              'VerifiableCredential',
+              'EducationCredential',
+            ],
+            flow: 'pre-authorized_code',
+            format: 'jwt_vc_json',
+            credential_subject: credentialSubject,
+            },
         }),
       });
 
