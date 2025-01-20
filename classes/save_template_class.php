@@ -46,6 +46,15 @@ class save_template_class extends moodleform {
         $mform->addElement("text", "wasAwardedBy", "Portable unique identifier of the awarding process");
         $mform->setType("messagetext", PARAM_NOTAGS);
 
+        $mform->addElement("text", "awardingDate", "Date when the award was issued");
+        $mform->setType("messagetext", PARAM_NOTAGS);
+
+        $mform->addElement("text", "location", "Location where the award was issued");
+        $mform->setType("messagetext", PARAM_NOTAGS);
+
+        $mform->addElement("text", "courseName", "Name of the course");
+        $mform->setType("messagetext", PARAM_NOTAGS);
+
         $mform->addElement("text", "grade", "Final grade");
         $mform->setType("messagetext", PARAM_NOTAGS);
 

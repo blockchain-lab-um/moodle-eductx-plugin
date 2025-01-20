@@ -1,5 +1,4 @@
 /**
- * @package   mod_eductx
  * @copyright 2021, Urban Vidovič <urban.vidovic2@um.si>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -459,6 +458,9 @@ define(["mod_eductx/main",
     document.getElementById("wasAwardedBy").value = template.wasAwardedBy;
     document.getElementById("grade").value = template.grade;
     document.getElementById("awardingBodyDescription").value = template.awardingBodyDescription;
+    document.getElementById("awardingDate").value = template.awardingDate;
+    document.getElementById("location").value = template.location;
+    document.getElementById("courseName").value = template.courseName;
     document.getElementById("ects").value = template.ects;
   };
 
@@ -485,6 +487,9 @@ define(["mod_eductx/main",
     document.getElementById("id_grade").value = document.getElementById("grade").value;
     document.getElementById("id_awardingBodyDescription").value = document.getElementById("awardingBodyDescription").value;
     document.getElementById("id_ects").value = document.getElementById("ects").value;
+    document.getElementById("id_awardingDate").value = document.getElementById("awardingDate").value;
+    document.getElementById("id_location").value = document.getElementById("location").value;
+    document.getElementById("id_courseName").value = document.getElementById("courseName").value;
     form.submit();
   };
 
@@ -607,20 +612,20 @@ define(["mod_eductx/main",
           personIdentifier: null,
           achieved: {
             id: null,
-            title: document.getElementById("achievement").value || null,
+            title: document.getElementById("achievement").value || "",
             specifiedBy: {
               id: null,
-              title: "Example", // Course iz moodla ime
+              title: document.getElementById("courseName").value,
               volumeOfLearning: null,
               iSCEDFCode: null,
               eCTSCreditPoints: document.getElementById("ects").value
             },
             wasAwardedBy: {
               id: document.getElementById("wasAwardedBy").value,
-              awardingBody: null,
+              awardingBody: "",
               awardingBodyDescription: document.getElementById("awardingBodyDescription").value,
-              awardingDate: null,
-              awardingLocation: null
+              awardingDate: document.getElementById("awardingDate").value || "",
+              awardingLocation: document.getElementById("location").value || ""
             },
             wasDerivedFrom: {
               id: null,

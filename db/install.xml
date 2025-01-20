@@ -35,6 +35,9 @@
                 <FIELD NAME="wasawardedby" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Portable unique identifier of the awarding process."/>
                 <FIELD NAME="grade" TYPE="text" LENGTH="10" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Final grade."/>
                 <FIELD NAME="awardingbodydescription" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Credential awarding body description."/>
+                <FIELD NAME="awardingdate" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="1970-01-01" SEQUENCE="false" COMMENT="The date when the award was issued."/>
+                <FIELD NAME="coursename" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="Name of the course."/>
+                <FIELD NAME="location" TYPE="text" LENGTH="400" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="The location where the award has been issued."/>
                 <FIELD NAME="ects" TYPE="text" LENGTH="10" NOTNULL="true" DEFAULT="-" SEQUENCE="false" COMMENT="ECTS value."/>
             </FIELDS>
             <KEYS>

@@ -66,10 +66,21 @@
             <select class="form-control" name="templates" id="templates">
                 <option disabled selected value>Select a template</option>
                 {{#certTemplates}}
-                    <option value='{ "id": "{{id}}", "name": "{{name}}", "title": "{{title}}", "achievement": "{{achievement}}",
-                        "wasAwardedBy": "{{wasawardedby}}", "grade": "{{grade}}",
-                        "awardingBodyDescription": "{{awardingbodydescription}}", "ects": "{{ects}}" }'>
-                        {{name}}</option>
+                    <option value='{
+                        "id": "{{id}}",
+                        "name": "{{name}}",
+                        "title": "{{title}}",
+                        "achievement": "{{achievement}}",
+                        "wasAwardedBy": "{{wasawardedby}}",
+                        "grade": "{{grade}}",
+                        "awardingBodyDescription": "{{awardingbodydescription}}",
+                        "ects": "{{ects}}",
+                        "awardingDate": "{{awardingdate}}",
+                        "courseName": "{{coursename}}",
+                        "location": "{{location}}"
+                    }'>
+                        {{name}}
+                    </option>
                 {{/certTemplates}}
             </select>
             <br>
@@ -79,6 +90,10 @@
         <h2>Verifiable Credential</h2>
         <hr>
         <form id="issueCert">
+            <label for="courseName">Course name</label>
+            <input type="text" class="form-control" id="courseName" name="courseName"
+                   placeholder="e.g. Cyber Security Course"><br>
+
             <label for="title">Title</label>
             <input type="text" class="form-control" id="title" name="title"
                    placeholder="e.g. Cyber Security Workshop VC"><br>
@@ -89,6 +104,14 @@
 
             <label for="wasAwardedBy">Portable Unique Identifier of the Awarding process</label>
             <input type="text" class="form-control" id="wasAwardedBy" name="wasAwardedBy"><br>
+
+            <label for="awardingDate">Awarding Date</label>
+            <input type="text" class="form-control" id="awardingDate" name="awardingDate"
+                   placeholder="YYYY-MM-DD"><br>
+
+            <label for="location">Location</label>
+            <input type="text" class="form-control" id="location" name="location"
+                   placeholder="Berlin, Germany"><br>
 
             <label for="grade">Grade</label>
             <input type="text" class="form-control" id="grade" name="grade" placeholder="e.g. 10"><br>
