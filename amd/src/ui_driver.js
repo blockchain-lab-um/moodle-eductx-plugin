@@ -172,10 +172,12 @@ define(["mod_eductx/main",
         headers,
         body: JSON.stringify({
           email: email,
+          pdf: "",
           data: {
             credential_type: [
               'VerifiableCredential',
-              'EducationCredential',
+              'VerifiableAttestation',
+              'EducationCredential'
             ],
             flow: 'pre-authorized_code',
             format: 'jwt_vc_json',
@@ -618,7 +620,7 @@ define(["mod_eductx/main",
               title: document.getElementById("courseName").value,
               volumeOfLearning: null,
               iSCEDFCode: null,
-              eCTSCreditPoints: document.getElementById("ects").value
+              eCTSCreditPoints: Number.parseInt(document.getElementById("ects").value)
             },
             wasAwardedBy: {
               id: document.getElementById("wasAwardedBy").value,
