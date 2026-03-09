@@ -35,9 +35,9 @@ class delete_template_class extends moodleform {
         ];
         $mform->updateAttributes($attribs);
         $mform->addElement("text", "deleteId", "Template ID");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("deleteId", PARAM_INT);
         $mform->addElement("text", "deleteName", "Template Name");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("deleteName", PARAM_TEXT);
         $this->add_action_buttons(false, "Delete Template");
     }
 }

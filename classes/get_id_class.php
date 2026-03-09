@@ -35,9 +35,9 @@ class get_id_class extends moodleform {
         ];
         $mform->updateAttributes($attribs);
         $mform->addElement("text", "did", "EduCTX ID");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("did", PARAM_TEXT);
         $mform->addElement("text", "address", "Address");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("address", PARAM_TEXT);
         $this->add_action_buttons(false, "Connect Masca");
     }
 }

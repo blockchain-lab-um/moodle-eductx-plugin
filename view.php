@@ -56,7 +56,7 @@ $savetemplateform->set_data($formdata);
 $deletetemplateform->set_data($formdata);
 
 $PAGE->set_url(new moodle_url('/mod/eductx/issue_certificateClass.php'));
-$PAGE->set_context(context_system::instance());
+$PAGE->set_context($context);
 $PAGE->set_title('EduCTX - Issue Certificate');
 $PAGE->set_heading($course->fullname);
 

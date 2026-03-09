@@ -35,34 +35,34 @@ class save_template_class extends moodleform {
         ];
         $mform->updateAttributes($attribs);
         $mform->addElement("text", "name", "Template Name");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("name", PARAM_TEXT);
 
         $mform->addElement("text", "title", "Credential title");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("title", PARAM_TEXT);
 
         $mform->addElement("text", "achievement", "Credential achievement");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("achievement", PARAM_TEXT);
 
         $mform->addElement("text", "wasAwardedBy", "Portable unique identifier of the awarding process");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("wasAwardedBy", PARAM_TEXT);
 
         $mform->addElement("text", "awardingDate", "Date when the award was issued");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("awardingDate", PARAM_TEXT);
 
         $mform->addElement("text", "location", "Location where the award was issued");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("location", PARAM_TEXT);
 
         $mform->addElement("text", "courseName", "Name of the course");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("courseName", PARAM_TEXT);
 
         $mform->addElement("text", "grade", "Final grade");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("grade", PARAM_TEXT);
 
         $mform->addElement("text", "awardingBodyDescription", "Measuring Unit");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("awardingBodyDescription", PARAM_TEXT);
 
         $mform->addElement("text", "ects", "ECTS Value");
-        $mform->setType("messagetext", PARAM_NOTAGS);
+        $mform->setType("ects", PARAM_TEXT);
 
         $this->add_action_buttons(false, "Save Template");
     }
