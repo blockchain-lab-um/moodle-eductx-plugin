@@ -73,8 +73,8 @@ foreach ($roleassignments as $role) {
 }
 
 $didobj = $DB->get_record("did", ["userid" => $USER->id]);
-$did = $didobj->did;
-$recordid = $didobj->id;
+$did = $didobj ? $didobj->did : null;
+$recordid = $didobj ? $didobj->id : null;
 $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendIdToJs", [$did]);
 $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendUnitIdToJs", [$course->id]);
 $PAGE->requires->js_call_amd("mod_eductx/ui_driver", "sendAuthorizedToJs", [$isauthorized]);
@@ -131,7 +131,7 @@ if ($isauthorized) {
     $certtemplates = $DB->get_records("templates", ["teacherid" => $USER->id]);
     foreach ($students as $student) {
         $didobj = $DB->get_record("did", ["userid" => $student->id]);
-        $did = $didobj->did;
+        $did = $didobj ? $didobj->did : null;
         if ($did != NULL) {
             $student->did = $did;
         } else {
