@@ -23,7 +23,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'mod_eductx';
-$plugin->version = 20260310;
+$plugin->version = 20260311;
 //$plugin->requires = 20210817;
 //$plugin->supported = TODO;   // Available as of Moodle 3.9.0 or later.
 //$plugin->incompatible = TODO;   // Available as of Moodle 3.9.0 or later.

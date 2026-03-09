@@ -15,3 +15,4 @@ $string["issuerendpointdesc"] = "Endpoint for issuer server";
 $string["apikey"] = "API Key";
 $string["apikeydesc"] = "API Key used to authenticate issuer server";
 $string["configrequiresubnet"] = "Lets see";
+$string["pluginadministration"] = "EduCTX administration";
